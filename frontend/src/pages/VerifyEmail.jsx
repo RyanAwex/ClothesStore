@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import SharedHeader from "../components/SharedHeader";
+const API_URL = import.meta.env.VITE_API_URL;
 
 function VerifyEmail() {
   const navigate = useNavigate();
@@ -9,6 +10,11 @@ function VerifyEmail() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const inputsRef = useRef([]);
+
+  const API_AUTH =
+    import.meta.env.VITE_MODE === "development"
+      ? `http://localhost:5000/api/auth/verify-email`
+      : `${API_URL}/api/auth/verify-email`;
 
   useEffect(() => {
     // focus first input on mount
@@ -114,7 +120,7 @@ function VerifyEmail() {
 
     setLoading(true);
     try {
-      const url = "http://localhost:5000/api/auth/verify-email";
+      const url = API_AUTH;
       await axios.post(url, { code: token }, { withCredentials: true });
       navigate("/");
     } catch (err) {
