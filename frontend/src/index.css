@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+* {
+  font-family: "Exo", sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* Hide vertical scrollbar for all browsers */
+/* html,
+body {
+  overflow-y: hidden;
+} */
+
+/* Optional: Hide scrollbar for Webkit browsers */
+body::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  box-sizing: border-box;
+}
+
+@media only screen and (min-width: 460px) {
+  /* Hide horizontal scrollbar on small screens */
+  .second-hero {
+    display: flex;
+  }
+}
+@media only screen and (min-width: 600px) {
+  /* Hide horizontal scrollbar on small screens */
+  .third-hero {
+    display: flex;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  height: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cad5e2;
+}
+.custom-scrollbar::-webkit-scrollbar-button {
+  display: none;
+}
