@@ -1,7 +1,6 @@
 import Review from "../models/Review.js";
 import mongoose from "mongoose";
-import fs from "fs";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 
 export const getReviews = async (req, res) => {
   try {
@@ -31,17 +30,25 @@ export const addReview = async (req, res) => {
   }
 
   try {
-    const image = req.file ? `/uploads/${req.file.filename}` : null;
-
+    let image = null;
+    if (req.file) {
+      const uploadRes = await new Promise((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream({ resource_type: "image" }, (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          })
+          .end(req.file.buffer);
+      });
+      image = uploadRes.secure_url;
+    }
     const newReview = new Review({
       name,
       review,
       rating: parsedRating,
       image,
     });
-
     await newReview.save();
-
     res
       .status(201)
       .json({ success: true, message: "Review added successfully" });
@@ -75,15 +82,17 @@ export const updateReview = async (req, res) => {
         .json({ success: false, message: "Review not found" });
     }
 
-    if (req.file && reviewDoc.image) {
-      // Delete old image
-      const oldImagePath = path.join("public", reviewDoc.image);
-      fs.unlink(oldImagePath, (err) => {
-        if (err)
-          console.log(`Error deleting old image ${oldImagePath}:`, err.message);
+    if (req.file) {
+      const uploadRes = await new Promise((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream({ resource_type: "image" }, (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          })
+          .end(req.file.buffer);
       });
+      reviewDoc.image = uploadRes.secure_url;
     }
-
     if (name !== undefined) reviewDoc.name = name;
     if (review !== undefined) reviewDoc.review = review;
     if (rating !== undefined) {
@@ -95,10 +104,7 @@ export const updateReview = async (req, res) => {
       }
       reviewDoc.rating = parsed;
     }
-    if (req.file) reviewDoc.image = `/uploads/${req.file.filename}`;
-
     await reviewDoc.save();
-
     return res.status(200).json({ success: true, review: reviewDoc });
   } catch (error) {
     console.log("Error while updating review: ", error.message);
@@ -123,13 +129,7 @@ export const deleteReview = async (req, res) => {
         .json({ success: false, message: "Review not found" });
     }
 
-    // Delete image
-    if (deleted.image) {
-      const imagePath = path.join("public", deleted.image);
-      fs.unlink(imagePath, (err) => {
-        if (err) console.log(`Error deleting image ${imagePath}:`, err.message);
-      });
-    }
+    // No need to delete image from Cloudinary for now
 
     return res
       .status(200)

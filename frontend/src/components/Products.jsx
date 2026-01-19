@@ -82,7 +82,7 @@ function Products({ title, margin, excludeId, limit } = {}) {
                 {/* Image Container */}
                 <div className="relative p-6 h-64 flex items-center justify-center overflow-hidden">
                   <img
-                    src={`${BASE_URL}${product.variants?.[0]?.image || ""}`}
+                    src={product.variants?.[0]?.image || ""}
                     alt="product image"
                     className="max-h-48 max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
                   />

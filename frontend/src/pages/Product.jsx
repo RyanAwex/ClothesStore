@@ -110,7 +110,7 @@ function Product() {
               </button>
 
               <img
-                src={`${BASE_URL}${currentVariant.image}`}
+                src={currentVariant.image}
                 alt="Product"
                 className="w-full h-auto max-h-100 object-contain rounded-lg shadow-sm border border-gray-100"
               />

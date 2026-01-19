@@ -57,7 +57,7 @@ function Cart() {
                   className="flex flex-col sm:flex-row items-center sm:items-center p-4 sm:p-6 border-b border-gray-200 last:border-b-0"
                 >
                   <img
-                    src={`${BASE_URL}${item.variant.image}`}
+                    src={item.variant.image}
                     alt={item.name}
                     className="w-24 h-24 sm:w-20 sm:h-20 object-contain rounded-lg mb-4 sm:mb-0 sm:mr-4"
                   />

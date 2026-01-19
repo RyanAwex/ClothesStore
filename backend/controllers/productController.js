@@ -1,7 +1,6 @@
 import Product from "../models/Product.js";
 import mongoose from "mongoose";
-import fs from "fs";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 
 export const getProducts = async (req, res) => {
   try {
@@ -63,25 +62,42 @@ export const addProduct = async (req, res) => {
 
   try {
     let parsedVariants = JSON.parse(variants);
-    parsedVariants = parsedVariants.map((v, idx) => ({
-      color: v.color,
-      image:
-        req.files && req.files[idx]
-          ? `/uploads/${req.files[idx].filename}`
-          : v.image || "",
-    }));
-
+    // Upload each image to Cloudinary if present
+    const uploadedVariants = await Promise.all(
+      parsedVariants.map(async (v, idx) => {
+        if (req.files && req.files[idx]) {
+          const file = req.files[idx];
+          const uploadRes = await new Promise((resolve, reject) => {
+            cloudinary.uploader
+              .upload_stream({ resource_type: "image" }, (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              })
+              .end(file.buffer);
+          });
+          if (uploadRes && uploadRes.secure_url) {
+            return { color: v.color, image: uploadRes.secure_url };
+          }
+        }
+        // If no image is provided, return null for image
+        return { color: v.color, image: v.image || null };
+      }),
+    );
+    // Validate that every variant has an image
+    if (uploadedVariants.some((v) => !v.image)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Each variant must have an image." });
+    }
     const newProduct = new Product({
       name,
       price: parsedPrice,
       description,
       details,
-      variants: parsedVariants,
+      variants: uploadedVariants,
       sizes: sizes ? JSON.parse(sizes) : [],
     });
-
     await newProduct.save();
-
     res
       .status(201)
       .json({ success: true, message: "Product added successfully" });
@@ -129,30 +145,35 @@ export const updateProduct = async (req, res) => {
     if (details !== undefined) product.details = details;
     if (variants !== undefined) {
       let parsedVariants = JSON.parse(variants);
-      parsedVariants = parsedVariants.map((v, idx) => {
-        if (req.files && req.files[idx] && v.image) {
-          // Delete old image
-          const oldImagePath = path.join("public", v.image);
-          fs.unlink(oldImagePath, (err) => {
-            if (err) {
-              console.log(
-                `Error deleting old image ${oldImagePath}:`,
-                err.message,
-              );
-            } else {
-              console.log(`Deleted old image: ${oldImagePath}`);
+      const uploadedVariants = await Promise.all(
+        parsedVariants.map(async (v, idx) => {
+          if (req.files && req.files[idx]) {
+            const file = req.files[idx];
+            const uploadRes = await new Promise((resolve, reject) => {
+              cloudinary.uploader
+                .upload_stream({ resource_type: "image" }, (error, result) => {
+                  if (error) reject(error);
+                  else resolve(result);
+                })
+                .end(file.buffer);
+            });
+            if (uploadRes && uploadRes.secure_url) {
+              return { color: v.color, image: uploadRes.secure_url };
             }
+          }
+          return { color: v.color, image: v.image || null };
+        }),
+      );
+      // Validate that every variant has an image
+      if (uploadedVariants.some((v) => !v.image)) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Each variant must have an image.",
           });
-        }
-        return {
-          color: v.color,
-          image:
-            req.files && req.files[idx]
-              ? `/uploads/${req.files[idx].filename}`
-              : v.image || "",
-        };
-      });
-      product.variants = parsedVariants;
+      }
+      product.variants = uploadedVariants;
     }
     if (sizes !== undefined) product.sizes = JSON.parse(sizes);
 

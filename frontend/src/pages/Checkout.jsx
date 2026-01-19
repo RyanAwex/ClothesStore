@@ -127,11 +127,7 @@ function Checkout() {
                   className="flex items-center mb-4 pb-4 border-b last:border-b-0"
                 >
                   <img
-                    src={
-                      buyNowItem
-                        ? `${BASE_URL}${item.variant.image}`
-                        : `${BASE_URL}${item.variant.image}`
-                    }
+                    src={item.variant?.image || ""}
                     alt={item.name}
                     className="w-16 h-16 object-contain rounded-lg mr-4"
                   />

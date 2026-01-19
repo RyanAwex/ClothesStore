@@ -6,6 +6,14 @@ import reviewRoutes from "./routes/reviewRoutes.js";
 import { connectDB } from "./db/initDB.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import { v2 as cloudinary } from "cloudinary";
+
+// Configure Cloudinary using environment variables
+cloudinary.config({
+  cloud_name: process.env.CLAUDE_NAME,
+  api_key: process.env.API_KEY_CLAUDE,
+  api_secret: process.env.API_SECRET_CLAUDE,
+});
 
 const app = express();
 const PORT = process.env.PORT || 5000;

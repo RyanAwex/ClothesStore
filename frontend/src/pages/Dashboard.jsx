@@ -536,10 +536,10 @@ function Dashboard() {
                             <img
                               src={
                                 typeof p.variants[0] === "string"
-                                  ? `${BASE_URL}${p.variants[0]}`
+                                  ? p.variants[0]
                                   : p.variants[0].image
-                                    ? `${BASE_URL}${p.variants[0].image}`
-                                    : "/"
+                                    ? p.variants[0].image
+                                    : ""
                               }
                               alt="img"
                               className="max-h-32 object-contain"
