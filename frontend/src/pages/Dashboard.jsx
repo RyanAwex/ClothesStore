@@ -771,7 +771,7 @@ function Dashboard() {
                         <div className="h-36 flex items-center justify-center bg-gray-50 rounded">
                           {r.image ? (
                             <img
-                              src={`${BASE_URL}${r.image}`}
+                              src={r.image}
                               alt="reviewer"
                               className="max-h-32 object-contain rounded"
                             />

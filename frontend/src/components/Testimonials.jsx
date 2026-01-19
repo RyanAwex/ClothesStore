@@ -47,7 +47,7 @@ function Testimonials() {
                 <div className="flex items-center gap-4 mb-4">
                   {review.image ? (
                     <img
-                      src={`${BASE_URL}${review.image}`}
+                      src={review.image}
                       alt={review.name}
                       className="w-12 h-12 rounded-full object-cover"
                     />
