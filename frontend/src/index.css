@@ -33,15 +33,25 @@ body {
   }
 }
 
+/* Custom scrollbar with rounded corners */
 .custom-scrollbar::-webkit-scrollbar {
-  height: 10px;
+  height: 8px;
+  border-radius: 8px;
+  background: #f3f3f3;
 }
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cad5e2;
+  background: #d1d5db;
+  border-radius: 8px;
 }
-.custom-scrollbar::-webkit-scrollbar-button {
-  display: none;
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f3f3f3;
+  border-radius: 8px;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f3f3;
+  border-radius: 8px;
 }

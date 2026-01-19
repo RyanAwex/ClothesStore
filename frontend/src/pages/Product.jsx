@@ -5,7 +5,7 @@ import Products from "../components/Products";
 import SharedHeader from "../components/SharedHeader";
 import { useCart } from "../hooks/useCart";
 import axios from "axios";
-import { useAuthStore } from "../stores/authStore";
+// import { useAuthStore } from "../stores/authStore";
 
 const API_URL = import.meta.env.VITE_API_URL;
 const API_ORDERS =
@@ -29,7 +29,6 @@ function Product() {
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState("M");
   const { addToCart } = useCart();
-  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     let mounted = true;
@@ -142,7 +141,7 @@ function Product() {
                   <button
                     key={variant.color}
                     onClick={() => setSelectedVariantIndex(index)}
-                    className={`px-3 py-1 rounded-full border transition text-sm ${
+                    className={`px-3 py-1 cursor-pointer rounded-full border transition text-sm ${
                       selectedVariantIndex === index
                         ? "bg-amber-800 text-white border-amber-800"
                         : "bg-white text-gray-700 border-gray-200"
@@ -167,9 +166,9 @@ function Product() {
                       disabled={!isAvailable}
                       className={`px-3 py-1 rounded border text-sm transition ${
                         selectedSize === size && isAvailable
-                          ? "bg-amber-800 text-white border-amber-800"
+                          ? "bg-amber-800 text-white cursor-pointer border-amber-800"
                           : isAvailable
-                            ? "bg-white text-gray-700 border-gray-200"
+                            ? "bg-white text-gray-700 cursor-pointer border-gray-200"
                             : "bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed"
                       }`}
                     >
@@ -183,13 +182,13 @@ function Product() {
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleAddToCart}
-                className="w-full sm:flex-1 px-4 py-3 bg-amber-800 text-white rounded-lg font-semibold hover:bg-amber-900 transition flex items-center justify-center gap-2"
+                className="w-full sm:flex-1 px-4 py-3 bg-amber-800 cursor-pointer text-white rounded-lg font-semibold hover:bg-amber-900 transition flex items-center justify-center gap-2"
               >
                 <ShoppingCart size={16} /> Add to Cart
               </button>
               <button
                 onClick={handleBuyNow}
-                className="w-full sm:flex-1 px-4 py-3 border border-gray-200 rounded-lg text-gray-800 hover:shadow-sm transition"
+                className="w-full sm:flex-1 px-4 py-3 border cursor-pointer border-gray-200 rounded-lg text-gray-800 hover:shadow-sm transition"
               >
                 Buy Now
               </button>

@@ -119,7 +119,7 @@ function Footer() {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="px-4 py-2 bg-gray-50  border border-gray-200 rounded-l-full focus:outline-none focus:border-amber-300 flex-1 md:w-64 shadow-sm"
+                className="px-4 py-2 bg-gray-50  border border-gray-200 rounded-l-full focus:outline-none focus:border-amber-300 flex-1 min-w-50 md:w-64 shadow-sm"
               />
               <button className="px-6 py-2 bg-amber-800 text-white border border-amber-800 font-semibold rounded-r-full hover:bg-amber-900 transition cursor-pointer">
                 Subscribe

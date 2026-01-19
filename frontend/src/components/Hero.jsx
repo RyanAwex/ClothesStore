@@ -1,5 +1,6 @@
 import React from "react";
 import { ShoppingBag, Sparkles, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 
 function Hero() {
   return (
@@ -34,7 +35,7 @@ function Hero() {
 
             {/* Main Heading */}
             <div className="space-y-2">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-900 leading-none tracking-tight">
+              <h1 className="text-5xl  lg:text-6xl xl:text-7xl font-black text-gray-900 leading-none tracking-tight">
                 <span className="block bg-linear-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent">
                   New Season
                 </span>
@@ -52,19 +53,19 @@ function Hero() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <a
-                href="/products"
-                className="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-linear-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-lg hover:scale-105 active:scale-95"
+              <Link
+                to="/products"
+                className="group inline-flex items-center justify-center gap-3 px-6 py-3 sm:px-8 sm:py-4 bg-linear-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-lg hover:scale-105 active:scale-95"
               >
                 <ShoppingBag className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
                 Shop Now
-              </a>
-              <a
-                href="/products"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-amber-200 text-amber-700 rounded-2xl hover:bg-amber-50 hover:border-amber-300 transition-all duration-300 font-semibold text-lg backdrop-blur-sm"
+              </Link>
+              <Link
+                to="/products"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-4 border-2 border-amber-200 text-amber-700 rounded-2xl hover:bg-amber-50 hover:border-amber-300 transition-all duration-300 font-semibold text-lg backdrop-blur-sm"
               >
                 Explore Collection
-              </a>
+              </Link>
             </div>
 
             {/* Stats or features */}

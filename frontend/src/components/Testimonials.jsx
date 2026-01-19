@@ -33,7 +33,7 @@ function Testimonials() {
         <h2 className="text-center text-3xl font-bold mb-8">
           What Our Customers Say
         </h2>
-        <div className="overflow-x-auto custom-scrollbar -mx-4 px-4">
+        <div className="overflow-x-auto custom-scrollbar  px-4">
           <div
             className="flex gap-2 sm:gap-6 pb-4"
             style={{ width: "max-content", scrollSnapType: "x mandatory" }}
@@ -41,7 +41,7 @@ function Testimonials() {
             {reviews.map((review) => (
               <div
                 key={review._id}
-                className="bg-white shadow-lg rounded-lg p-6 shrink-0 w-[90vw] sm:w-80 lg:w-96"
+                className="bg-white shadow-sm rounded-lg p-6 shrink-0 w-[90vw] sm:w-80 lg:w-96"
                 style={{ scrollSnapAlign: "start" }}
               >
                 <div className="flex items-center gap-4 mb-4">

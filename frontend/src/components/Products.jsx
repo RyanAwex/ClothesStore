@@ -76,11 +76,11 @@ function Products({ title, margin, excludeId, limit } = {}) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
             {items.map((product) => (
               <div
-                className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
+                className="mx-4 sm:mx-0 group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
                 key={product._id || product.id}
               >
                 {/* Image Container */}
-                <div className="relative p-6 h-64 flex items-center justify-center overflow-hidden">
+                <div className="relative p-6 h-52 sm:h-64 flex items-center justify-center overflow-hidden">
                   <img
                     src={product.variants?.[0]?.image || ""}
                     alt="product image"
@@ -143,10 +143,10 @@ function Products({ title, margin, excludeId, limit } = {}) {
                   <div className="flex items-center justify-between pt-2">
                     <div className="space-y-1">
                       <p className="text-2xl font-bold text-gray-900">
-                        ${product.price}
+                        MAD {product.price}
                       </p>
                       <p className="text-sm text-gray-500 line-through">
-                        ${(product.price * 1.2).toFixed(0)}
+                        MAD {(product.price * 1.2).toFixed(0)}
                       </p>
                     </div>
                     <Link
@@ -164,13 +164,13 @@ function Products({ title, margin, excludeId, limit } = {}) {
         )}
 
         {/* Load More Button (if needed) */}
-        {items.length > 0 && !limit && (
+        {/* {items.length > 0 && !limit && (
           <div className="text-center mt-12">
             <button className="bg-white border-2 border-amber-200 text-amber-700 px-8 py-3 rounded-xl font-semibold hover:bg-amber-50 hover:border-amber-300 transition-all duration-200">
               Load More Products
             </button>
           </div>
-        )}
+        )} */}
       </div>
     </section>
   );

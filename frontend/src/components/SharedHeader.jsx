@@ -14,7 +14,7 @@ function SharedHeader() {
   const isAuth =
     location.pathname === "/auth" ||
     location.pathname === "/verify-email" ||
-    location.pathname === "/checkout" ||
+    // location.pathname === "/checkout" ||
     location.pathname === "/forgot-password";
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -288,17 +288,19 @@ function SharedHeader() {
                 </button>
               </li>
             )}
-            <li>
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  navigate("/checkout");
-                }}
-                className="w-full text-left px-3 py-3 rounded hover:bg-gray-50 transition flex items-center gap-3"
-              >
-                Checkout
-              </button>
-            </li>
+            {document.location.pathname !== "/checkout" && (
+              <li>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate("/checkout");
+                  }}
+                  className="w-full text-left px-3 py-3 rounded hover:bg-gray-50 transition flex items-center gap-3"
+                >
+                  Checkout
+                </button>
+              </li>
+            )}
           </ul>
 
           <div className="mt-auto">
@@ -330,7 +332,7 @@ function SharedHeader() {
                 </button>
                 <button
                   onClick={handleDeleteAccount}
-                  className="w-full px-4 py-3 text-red-500 rounded-lg font-semibold hover:bg-slate-200 border-2 border-red-500 transition"
+                  className="w-full mb-5 px-4 py-3 text-red-500 rounded-lg font-semibold hover:bg-slate-200 border-2 border-red-500 transition"
                 >
                   Delete Account
                 </button>
@@ -341,7 +343,7 @@ function SharedHeader() {
                   setMenuOpen(false);
                   navigate("/auth");
                 }}
-                className="w-full px-4 py-3 text-black rounded-lg font-semibold hover:bg-slate-200 border-2 border-slate-200 transition"
+                className="w-full mb-5 px-4 py-3 text-black rounded-lg font-semibold hover:bg-slate-200 border-2 border-slate-200 transition"
               >
                 Login
               </button>

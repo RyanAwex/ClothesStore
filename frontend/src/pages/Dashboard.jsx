@@ -337,19 +337,19 @@ function Dashboard() {
           <nav className="flex flex-col gap-2">
             <button
               onClick={() => setActive("products")}
-              className={`text-left px-3 py-2 rounded ${active === "products" ? "bg-amber-800 text-white" : "hover:bg-gray-50"}`}
+              className={`text-left cursor-pointer px-3 py-2 rounded ${active === "products" ? "bg-amber-800 text-white" : "hover:bg-gray-50"}`}
             >
               Products
             </button>
             <button
               onClick={() => setActive("orders")}
-              className={`text-left px-3 py-2 rounded ${active === "orders" ? "bg-amber-800 text-white" : "hover:bg-gray-50"}`}
+              className={`text-left cursor-pointer px-3 py-2 rounded ${active === "orders" ? "bg-amber-800 text-white" : "hover:bg-gray-50"}`}
             >
               Orders
             </button>
             <button
               onClick={() => setActive("reviews")}
-              className={`text-left px-3 py-2 rounded ${active === "reviews" ? "bg-amber-800 text-white" : "hover:bg-gray-50"}`}
+              className={`text-left cursor-pointer px-3 py-2 rounded ${active === "reviews" ? "bg-amber-800 text-white" : "hover:bg-gray-50"}`}
             >
               Reviews
             </button>
@@ -371,7 +371,7 @@ function Dashboard() {
                         setShowAddForm(true);
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}
-                      className="px-4 py-2 bg-amber-800 text-white rounded-lg font-semibold"
+                      className="px-4 cursor-pointer py-2 bg-amber-800 text-white rounded-lg font-semibold"
                     >
                       Add Product
                     </button>
@@ -400,16 +400,13 @@ function Dashboard() {
                     />
 
                     {/* Variants as dynamic list of {color,image} */}
-                    <div className="sm:col-span-2">
+                    <div className="col-span-1 w-full">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Variants
                       </label>
                       <div className="space-y-2">
                         {(form.variants || []).map((v, idx) => (
-                          <div
-                            key={idx}
-                            className="flex flex-col sm:flex-row gap-2"
-                          >
+                          <div key={idx} className="flex flex-col gap-2">
                             <input
                               placeholder="Color"
                               value={v.color || ""}
@@ -421,16 +418,16 @@ function Dashboard() {
                                 };
                                 handleInput("variants", next);
                               }}
-                              className="w-full sm:max-w-20 h-12 border rounded px-3 py-2 sm:flex-1"
+                              className="w-full h-12 border rounded px-3 py-2"
                             />
                             <input
                               type="file"
                               name={`variantImage${idx}`}
                               accept="image/*"
-                              className="w-full sm:max-w-20 h-12 border rounded px-3 py-2 sm:flex-1"
+                              className="w-full h-12 border rounded px-3 py-2"
                             />
                             {v.image && (
-                              <div className="text-sm text-gray-600 w-full sm:max-w-20 max-h-12 overflow-hidden">
+                              <div className="text-sm text-gray-600 w-full max-h-12 overflow-hidden">
                                 {v.image}
                               </div>
                             )}
@@ -441,7 +438,7 @@ function Dashboard() {
                                 next.splice(idx, 1);
                                 handleInput("variants", next);
                               }}
-                              className="px-3 py-2 border rounded bg-red-50 text-red-600 sm:self-center"
+                              className="px-3 py-2 cursor-pointer border rounded bg-red-50 text-red-600 self-center"
                             >
                               Remove
                             </button>
@@ -455,7 +452,7 @@ function Dashboard() {
                               { color: "", image: "" },
                             ])
                           }
-                          className="px-3 py-2 bg-gray-100 rounded w-full sm:w-auto"
+                          className="px-3 py-2 cursor-pointer bg-gray-100 rounded w-full"
                         >
                           Add Variant
                         </button>
@@ -498,7 +495,7 @@ function Dashboard() {
                   <div className="mt-3 flex gap-2">
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-amber-800 text-white rounded-lg font-semibold"
+                      className="px-4 py-2 cursor-pointer bg-amber-800 text-white rounded-lg font-semibold"
                     >
                       {editingId ? "Save Changes" : "Create Product"}
                     </button>
@@ -509,7 +506,7 @@ function Dashboard() {
                         setForm(emptyForm);
                         setShowAddForm(false);
                       }}
-                      className="px-4 py-2 border rounded-lg"
+                      className="px-4 py-2 cursor-pointer border rounded-lg"
                     >
                       Cancel
                     </button>
@@ -553,7 +550,7 @@ function Dashboard() {
                             {p.name}
                           </div>
                           <div className="text-sm text-gray-600">
-                            ${p.price}
+                            MAD {p.price}
                           </div>
                           <div className="text-sm text-gray-600 mt-2">
                             {p.description}
@@ -562,13 +559,13 @@ function Dashboard() {
                         <div className="flex gap-2 mt-3">
                           <button
                             onClick={() => startEdit(p)}
-                            className="px-3 py-2 border rounded"
+                            className="px-3 py-2 cursor-pointer border rounded"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => deleteProduct(p._id)}
-                            className="px-3 py-2 bg-red-700 text-white rounded"
+                            className="px-3 py-2 cursor-pointer bg-red-700 text-white rounded"
                           >
                             Delete
                           </button>
@@ -643,7 +640,7 @@ function Dashboard() {
                         <div className="mt-3 flex gap-2">
                           <button
                             onClick={() => deleteOrder(o._id || o.id)}
-                            className="px-3 py-2 bg-red-700 text-white rounded"
+                            className="px-3 py-2 cursor-pointer bg-red-700 text-white rounded"
                           >
                             Delete Order
                           </button>
@@ -669,7 +666,7 @@ function Dashboard() {
                         setShowAddReviewForm(true);
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}
-                      className="px-4 py-2 bg-amber-800 text-white rounded-lg font-semibold"
+                      className="px-4 py-2 cursor-pointer bg-amber-800 text-white rounded-lg font-semibold"
                     >
                       Add Review
                     </button>
@@ -736,7 +733,7 @@ function Dashboard() {
                   <div className="flex gap-2 mt-4">
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-amber-800 text-white rounded-lg font-semibold"
+                      className="px-4 py-2 cursor-pointer bg-amber-800 text-white rounded-lg font-semibold"
                     >
                       {editingReviewId ? "Save Changes" : "Create Review"}
                     </button>
@@ -769,15 +766,11 @@ function Dashboard() {
                         className="bg-white shadow-sm rounded-lg p-4 flex flex-col gap-2"
                       >
                         <div className="h-36 flex items-center justify-center bg-gray-50 rounded">
-                          {r.image ? (
-                            <img
-                              src={r.image}
-                              alt="reviewer"
-                              className="max-h-32 object-contain rounded"
-                            />
-                          ) : (
-                            <div className="text-gray-400">No image</div>
-                          )}
+                          <img
+                            src={r.image || "/user.png"}
+                            alt="reviewer"
+                            className="max-h-32 object-contain rounded"
+                          />
                         </div>
                         <div className="flex-1">
                           <h3 className="font-semibold">{r.name}</h3>
@@ -802,13 +795,13 @@ function Dashboard() {
                         <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => startEditReview(r)}
-                            className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
+                            className="px-3 py-1 cursor-pointer bg-blue-600 text-white rounded text-sm"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => deleteReview(r._id)}
-                            className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+                            className="px-3 py-1 cursor-pointer bg-red-600 text-white rounded text-sm"
                           >
                             Delete
                           </button>

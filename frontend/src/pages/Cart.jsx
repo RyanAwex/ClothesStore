@@ -14,8 +14,8 @@ function Cart() {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCart();
 
   const subtotal = getCartTotal();
-  const tax = subtotal * 0.08; // 8% tax
-  const shipping = subtotal > 50 ? 0 : 9.99; // Free shipping over $50
+  const tax = subtotal * 0.05; // 5% tax
+  const shipping = subtotal > 300 ? 0 : 30; // Free shipping over MAD 300
   const total = subtotal + tax + shipping;
 
   if (cartItems.length === 0) {
@@ -67,7 +67,7 @@ function Cart() {
                       Color: {item.variant.color} | Size: {item.size}
                     </p>
                     <p className="text-lg font-bold text-amber-800">
-                      ${item.price}
+                      MAD {item.price}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 mt-3 sm:mt-0">
@@ -76,7 +76,7 @@ function Cart() {
                         onClick={() =>
                           updateQuantity(item.id, item.quantity - 1)
                         }
-                        className="px-3 py-2 hover:bg-gray-100 transition touch-manipulation"
+                        className="px-3 py-2 cursor-pointer rounded-full transition touch-manipulation"
                         aria-label={`Decrease quantity of ${item.name}`}
                       >
                         <Minus size={16} />
@@ -88,7 +88,7 @@ function Cart() {
                         onClick={() =>
                           updateQuantity(item.id, item.quantity + 1)
                         }
-                        className="px-3 py-2 hover:bg-gray-100 transition touch-manipulation"
+                        className="px-3 py-2 cursor-pointer rounded-full transition touch-manipulation"
                         aria-label={`Increase quantity of ${item.name}`}
                       >
                         <Plus size={16} />
@@ -96,7 +96,7 @@ function Cart() {
                     </div>
                     <button
                       onClick={() => removeFromCart(item.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded transition"
+                      className="p-2 text-red-500 cursor-pointer hover:bg-red-50 rounded transition"
                       aria-label={`Remove ${item.name} from cart`}
                     >
                       <Trash2 size={18} />
@@ -117,22 +117,24 @@ function Cart() {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                  <span className="font-semibold">
+                    MAD {subtotal.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tax</span>
-                  <span className="font-semibold">${tax.toFixed(2)}</span>
+                  <span className="font-semibold">MAD {tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
                   <span className="font-semibold">
-                    {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
+                    {shipping === 0 ? "Free" : `MAD ${shipping.toFixed(2)}`}
                   </span>
                 </div>
                 <hr className="my-3" />
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-amber-800">${total.toFixed(2)}</span>
+                  <span className="text-amber-800">MAD {total.toFixed(2)}</span>
                 </div>
               </div>
 
