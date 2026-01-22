@@ -25,6 +25,19 @@ function ScrollToTop() {
 
 const ProtectedRoute = ({ children }) => {
   const isAdmin = useAuthStore((s) => s.isAdmin);
+  const isCheckingAuth = useAuthStore((s) => s.isCheckingAuth);
+
+  // Show loading while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-800 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking permissions...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (
@@ -69,6 +82,12 @@ function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(
+        "Auth state changed:",
+        event,
+        session?.user?.email,
+        session?.user?.app_metadata,
+      );
       if (event === "SIGNED_IN") {
         useAuthStore.setState({
           user: session.user,

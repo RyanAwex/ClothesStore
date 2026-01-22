@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import SharedHeader from "../components/SharedHeader";
 import axios from "axios";
 import { useAuthStore } from "../stores/authStore";
-import { useNavigate } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL;
 const API_PRODUCTS =
@@ -23,13 +22,8 @@ const BASE_URL =
     : API_URL;
 
 function Dashboard() {
-  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-
-  useEffect(() => {
-    if (!isAuthenticated || !user?.isAdmin) navigate("/");
-  }, [isAuthenticated, user, navigate]);
 
   const [active, setActive] = useState("products");
 

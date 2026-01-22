@@ -98,6 +98,7 @@ function SharedHeader() {
 
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
   const logout = useAuthStore((s) => s.logout);
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
 
@@ -316,7 +317,7 @@ function SharedHeader() {
 
             {isAuthenticated ? (
               <>
-                {user?.isAdmin && (
+                {isAdmin && (
                   <button
                     onClick={handleDashboard}
                     className="w-full mb-2 px-4 py-3 text-black rounded-lg font-semibold hover:bg-slate-200 border-2 border-slate-200 transition"
