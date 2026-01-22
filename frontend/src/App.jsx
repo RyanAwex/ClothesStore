@@ -11,6 +11,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import Dashboard from "./pages/Dashboard";
 import { useAuthStore } from "./stores/authStore";
 import ForgotPassword from "./pages/ForgotPassword";
+import supabase from "./utils/supabase";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -23,9 +24,9 @@ function ScrollToTop() {
 }
 
 const ProtectedRoute = ({ children }) => {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
 
-  if (!isAuthenticated) {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
@@ -63,6 +64,28 @@ function App() {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN") {
+        useAuthStore.setState({
+          user: session.user,
+          isAuthenticated: true,
+          isAdmin: session.user?.app_metadata?.role === "admin",
+        });
+      } else if (event === "SIGNED_OUT") {
+        useAuthStore.setState({
+          user: null,
+          isAuthenticated: false,
+          isAdmin: false,
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <div className="w-full min-h-screen relative mx-auto bg-white">

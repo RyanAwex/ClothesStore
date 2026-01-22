@@ -1,178 +1,98 @@
-import React, { useEffect, useRef, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { useAuthStore } from "../stores/authStore";
 import { useNavigate } from "react-router-dom";
 import SharedHeader from "../components/SharedHeader";
-const API_URL = import.meta.env.VITE_API_URL;
 
 function VerifyEmail() {
   const navigate = useNavigate();
-  const [digits, setDigits] = useState(["", "", "", "", "", ""]);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const inputsRef = useRef([]);
-
-  const API_AUTH =
-    import.meta.env.VITE_MODE === "development"
-      ? `http://localhost:5000/api/auth/verify-email`
-      : `${API_URL}/api/auth/verify-email`;
+  const [email] = useState(
+    () => localStorage.getItem("pendingVerificationEmail") || "",
+  );
+  const checkAuth = useAuthStore((s) => s.checkAuth);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
-    // focus first input on mount
-    setTimeout(() => {
-      if (inputsRef.current[0]) inputsRef.current[0].focus();
-    }, 0);
-  }, []);
+    const interval = setInterval(() => {
+      checkAuth();
+    }, 2000);
 
-  const setDigitAt = (index, value) => {
-    setDigits((d) => {
-      const next = [...d];
-      next[index] = value;
-      return next;
-    });
-  };
+    return () => clearInterval(interval);
+  }, [checkAuth]);
 
-  const handleChange = (e, idx) => {
-    const raw = e.target.value || "";
-    const onlyDigits = raw.replace(/\D/g, "");
-    if (!onlyDigits) {
-      setDigitAt(idx, "");
-      return;
-    }
-
-    // If user pasted multiple digits into a single input, distribute them
-    if (onlyDigits.length > 1) {
-      const chars = onlyDigits.split("");
-      setDigits((d) => {
-        const next = [...d];
-        let i = idx;
-        for (const ch of chars) {
-          if (i > 5) break;
-          next[i] = ch;
-          i += 1;
-        }
-        // after setting, focus the next empty or last filled
-        setTimeout(() => {
-          const focusIdx = Math.min(i, 5);
-          inputsRef.current[focusIdx] && inputsRef.current[focusIdx].focus();
-        }, 0);
-        return next;
-      });
-      return;
-    }
-
-    // single digit typed
-    setDigitAt(idx, onlyDigits);
-    // move focus to next
-    if (idx < 5) {
-      setTimeout(
-        () => inputsRef.current[idx + 1] && inputsRef.current[idx + 1].focus(),
-        0,
-      );
-    }
-  };
-
-  const handleKeyDown = (e, idx) => {
-    if (e.key === "Backspace") {
-      if (digits[idx]) {
-        // if current has value, clear it
-        setDigitAt(idx, "");
-      } else if (idx > 0) {
-        // move to previous
-        inputsRef.current[idx - 1] && inputsRef.current[idx - 1].focus();
-        setDigitAt(idx - 1, "");
-      }
-    } else if (e.key === "ArrowLeft" && idx > 0) {
-      inputsRef.current[idx - 1] && inputsRef.current[idx - 1].focus();
-    } else if (e.key === "ArrowRight" && idx < 5) {
-      inputsRef.current[idx + 1] && inputsRef.current[idx + 1].focus();
-    }
-  };
-
-  const handlePaste = (e) => {
-    e.preventDefault();
-    const paste =
-      (e.clipboardData || window.clipboardData).getData("text") || "";
-    const onlyDigits = paste.replace(/\D/g, "").slice(0, 6);
-    if (!onlyDigits) return;
-    const chars = onlyDigits.split("");
-    setDigits((d) => {
-      const next = [...d];
-      let i = 0;
-      for (; i < chars.length && i < 6; i++) {
-        next[i] = chars[i];
-      }
-      setTimeout(() => {
-        const focusIdx = Math.min(i, 5);
-        inputsRef.current[focusIdx] && inputsRef.current[focusIdx].focus();
-      }, 0);
-      return next;
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e && e.preventDefault();
-    setError("");
-    const token = digits.join("");
-    if (token.length !== 6) {
-      setError("Please enter the 6-digit token");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const url = API_AUTH;
-      await axios.post(url, { code: token }, { withCredentials: true });
+  useEffect(() => {
+    // If user becomes authenticated, redirect to home
+    if (isAuthenticated) {
+      localStorage.removeItem("pendingVerificationEmail");
       navigate("/");
-    } catch (err) {
-      if (err.response)
-        setError(err.response.data?.message || "Verification failed");
-      else setError("Network error, try again");
-    } finally {
-      setLoading(false);
     }
+  }, [isAuthenticated, navigate]);
+
+  const handleResendEmail = async () => {
+    // You could implement resend functionality here if needed
+    alert(
+      "Please check your email for the verification link. If you haven't received it, try signing up again.",
+    );
   };
 
   return (
     <div className="min-h-screen">
       <SharedHeader />
       <main className="max-w-md mx-auto mt-24 px-4">
-        <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
-          <h1 className="text-2xl font-extrabold text-gray-900 mb-2">
-            Verify Email
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Enter the 6-digit code sent to your email.
-          </p>
-
-          {error && <div className="mb-4 text-sm text-red-600">{error}</div>}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex items-center justify-center gap-2">
-              {digits.map((d, i) => (
-                <input
-                  key={i}
-                  ref={(el) => (inputsRef.current[i] = el)}
-                  value={d}
-                  onChange={(e) => handleChange(e, i)}
-                  onKeyDown={(e) => handleKeyDown(e, i)}
-                  onPaste={i === 0 ? handlePaste : (e) => e.preventDefault()}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="\d*"
-                  maxLength={1}
-                  className="w-12 h-12 text-center text-lg border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-200 outline-none"
+        <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8 text-center">
+          <div className="mb-6">
+            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-amber-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                 />
-              ))}
+              </svg>
+            </div>
+            <h1 className="text-2xl font-extrabold text-gray-900 mb-2">
+              Verify Your Email
+            </h1>
+            <p className="text-gray-600 mb-4">
+              We've sent a verification link to{" "}
+              <span className="font-medium text-gray-900">
+                {email || "your email"}
+              </span>
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">
+              Click the link in the email to verify your account and start
+              shopping. The link will expire in 24 hours.
+            </p>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-sm text-amber-800">
+                <strong>Didn't receive the email?</strong> Check your spam
+                folder or try signing up again with the same email address.
+              </p>
             </div>
 
             <button
-              type="submit"
-              disabled={loading}
+              onClick={handleResendEmail}
+              className="w-full py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition"
+            >
+              I Didn't Receive the Email
+            </button>
+
+            <button
+              onClick={() => navigate("/auth")}
               className="w-full py-3 bg-amber-800 text-white rounded-lg font-semibold hover:bg-amber-900 transition"
             >
-              {loading ? "Verifying..." : "Verify"}
+              Back to Sign In
             </button>
-          </form>
+          </div>
         </div>
       </main>
     </div>

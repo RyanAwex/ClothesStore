@@ -1,14 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import axios from "axios";
-const API_URL = import.meta.env.VITE_API_URL;
-
-const API_AUTH =
-  import.meta.env.VITE_MODE === "development"
-    ? `http://localhost:5000/api/auth`
-    : `${API_URL}/api/auth`;
-
-axios.defaults.withCredentials = true;
+import supabase from "../utils/supabase";
 
 export const useAuthStore = create(
   persist(
@@ -16,6 +8,7 @@ export const useAuthStore = create(
       user: null,
       profile: null,
       isAuthenticated: false,
+      isAdmin: false,
       error: null,
       isLoading: false,
       isCheckingAuth: true,
@@ -24,18 +17,20 @@ export const useAuthStore = create(
       signup: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await axios.post(`${API_AUTH}/signup`, {
+          const { data, error } = await supabase.auth.signUp({
             email,
             password,
           });
+          if (error) throw error;
           set({
-            user: response.data.user,
-            isAuthenticated: true,
+            user: data.user,
+            isAuthenticated: !!data.user,
+            isAdmin: data.user?.app_metadata?.role === "admin",
             isLoading: false,
           });
         } catch (error) {
           set({
-            error: error.response.data.message || "Error signing up",
+            error: error.message || "Error signing up",
             isLoading: false,
           });
           throw error;
@@ -44,19 +39,21 @@ export const useAuthStore = create(
       login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await axios.post(`${API_AUTH}/login`, {
+          const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
           });
+          if (error) throw error;
           set({
             isAuthenticated: true,
-            user: response.data.user,
+            user: data.user,
+            isAdmin: data.user?.app_metadata?.role === "admin",
             error: null,
             isLoading: false,
           });
         } catch (error) {
           set({
-            error: error.response?.data?.message || "Error logging in",
+            error: error.message || "Error logging in",
             isLoading: false,
           });
           throw error;
@@ -66,10 +63,12 @@ export const useAuthStore = create(
       logout: async () => {
         set({ isLoading: true, error: null });
         try {
-          await axios.post(`${API_AUTH}/logout`);
+          const { error } = await supabase.auth.signOut();
+          if (error) throw error;
           set({
             user: null,
             isAuthenticated: false,
+            isAdmin: false,
             error: null,
             isLoading: false,
           });
@@ -78,21 +77,25 @@ export const useAuthStore = create(
           throw error;
         }
       },
-      verifyEmail: async (code) => {
+      verifyEmail: async (email, code) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await axios.post(`${API_AUTH}/verify-email`, {
-            code,
+          const { data, error } = await supabase.auth.verifyOtp({
+            email,
+            token: code,
+            type: "signup",
           });
+          if (error) throw error;
           set({
-            user: response.data.user,
+            user: data.user,
             isAuthenticated: true,
+            isAdmin: data.user?.app_metadata?.role === "admin",
             isLoading: false,
           });
-          return response.data;
+          return data;
         } catch (error) {
           set({
-            error: error.response.data.message || "Error verifying email",
+            error: error.message || "Error verifying email",
             isLoading: false,
           });
           throw error;
@@ -101,15 +104,20 @@ export const useAuthStore = create(
       checkAuth: async () => {
         set({ isCheckingAuth: true, error: null });
         try {
-          const response = await axios.get(`${API_AUTH}/check-auth`);
+          const {
+            data: { session },
+            error,
+          } = await supabase.auth.getSession();
+          if (error) throw error;
           set({
-            user: response.data.user,
-            isAuthenticated: true,
+            user: session?.user || null,
+            isAuthenticated: !!session,
+            isAdmin: session?.user?.app_metadata?.role === "admin",
             isCheckingAuth: false,
           });
         } catch (error) {
           set({
-            error: error.response?.data?.message || "Error checking auth",
+            error: error.message || "Error checking auth",
             isCheckingAuth: false,
             isAuthenticated: false,
           });
@@ -118,34 +126,29 @@ export const useAuthStore = create(
       forgotPassword: async (email) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await axios.post(`${API_AUTH}/forgot-password`, {
-            email,
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
           });
-          set({ message: response.data.message, isLoading: false });
+          if (error) throw error;
+          set({ message: "Password reset email sent", isLoading: false });
         } catch (error) {
           set({
             isLoading: false,
-            error:
-              error.response.data.message ||
-              "Error sending reset password email",
+            error: error.message || "Error sending reset password email",
           });
           throw error;
         }
       },
-      resetPassword: async (token, password) => {
+      resetPassword: async (password) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await axios.post(
-            `${API_AUTH}/reset-password/${token}`,
-            {
-              password,
-            },
-          );
-          set({ message: response.data.message, isLoading: false });
+          const { error } = await supabase.auth.updateUser({ password });
+          if (error) throw error;
+          set({ message: "Password updated successfully", isLoading: false });
         } catch (error) {
           set({
+            error: error.message || "Error resetting password",
             isLoading: false,
-            error: error.response.data.message || "Error resetting password",
           });
           throw error;
         }
@@ -153,15 +156,20 @@ export const useAuthStore = create(
       deleteAccount: async () => {
         set({ isLoading: true, error: null });
         try {
-          await axios.delete(`${API_AUTH}/delete-account`);
+          // Note: Supabase deleteUser requires admin privileges
+          const { error } = await supabase.auth.admin.deleteUser(
+            supabase.auth.user.id,
+          );
+          if (error) throw error;
           set({
             user: null,
             isAuthenticated: false,
+            isAdmin: false,
             error: null,
             isLoading: false,
           });
         } catch (error) {
-          set({ error: "Error logging out", isLoading: false });
+          set({ error: "Error deleting account", isLoading: false });
           throw error;
         }
       },
@@ -171,6 +179,7 @@ export const useAuthStore = create(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        isAdmin: state.isAdmin,
       }),
     },
   ),

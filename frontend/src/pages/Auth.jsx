@@ -50,6 +50,8 @@ function Login() {
         await login(email, password);
       } else {
         await signup(email, password);
+        // Store email for verification
+        localStorage.setItem("pendingVerificationEmail", email);
       }
 
       // Persist a minimal user marker locally for any non-store consumers
