@@ -82,12 +82,12 @@ function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log(
-        "Auth state changed:",
-        event,
-        session?.user?.email,
-        session?.user?.app_metadata,
-      );
+      // console.log(
+      //   "Auth state changed:",
+      //   event,
+      //   session?.user?.email,
+      //   session?.user?.app_metadata,
+      // );
       if (event === "SIGNED_IN") {
         useAuthStore.setState({
           user: session.user,

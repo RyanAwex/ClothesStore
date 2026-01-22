@@ -1,814 +1,664 @@
 import React, { useEffect, useState } from "react";
 import SharedHeader from "../components/SharedHeader";
-import axios from "axios";
 import { useAuthStore } from "../stores/authStore";
-
-const API_URL = import.meta.env.VITE_API_URL;
-const API_PRODUCTS =
-  import.meta.env.VITE_MODE === "development"
-    ? `http://localhost:5000/api/products`
-    : `${API_URL}/api/products`;
-const API_ORDERS =
-  import.meta.env.VITE_MODE === "development"
-    ? `http://localhost:5000/api/orders`
-    : `${API_URL}/api/orders`;
-const API_REVIEWS =
-  import.meta.env.VITE_MODE === "development"
-    ? `http://localhost:5000/api/reviews`
-    : `${API_URL}/api/reviews`;
-const BASE_URL =
-  import.meta.env.VITE_MODE === "development"
-    ? "http://localhost:5000"
-    : API_URL;
+import supabase, {
+  uploadProductImage,
+  getProductImageUrl,
+} from "../utils/supabase";
+import {
+  BarChart3,
+  Package,
+  ShoppingCart,
+  Star,
+  Plus,
+  Edit,
+  Trash2,
+  Menu,
+  X,
+  Upload,
+  Eye,
+  TrendingUp,
+  Users,
+  DollarSign,
+} from "lucide-react";
 
 function Dashboard() {
   const user = useAuthStore((s) => s.user);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-
-  const [active, setActive] = useState("products");
-
-  // Products state
+  const [activeTab, setActiveTab] = useState("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [products, setProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Reviews state
-  const [reviews, setReviews] = useState([]);
-  const [loadingReviews, setLoadingReviews] = useState(false);
-  const [reviewsError, setReviewsError] = useState(null);
-
-  // Form state for add/edit
-  const emptyForm = {
+  // Form states
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [productForm, setProductForm] = useState({
     name: "",
     price: "",
     description: "",
-    details: "",
-    variants: [],
+    variants: [{ color: "", imageFile: null, imagePreview: null }],
     sizes: [],
-  };
-  const [form, setForm] = useState(emptyForm);
-  const [editingId, setEditingId] = useState(null);
-  const [showAddForm, setShowAddForm] = useState(false);
+  });
 
-  // Reviews form
-  const emptyReviewForm = {
-    name: "",
-    review: "",
-    rating: 5,
-  };
-  const [reviewForm, setReviewForm] = useState(emptyReviewForm);
-  const [editingReviewId, setEditingReviewId] = useState(null);
-  const [showAddReviewForm, setShowAddReviewForm] = useState(false);
-
-  // Orders
-  const [orders, setOrders] = useState([]);
-  const [loadingOrders, setLoadingOrders] = useState(false);
-  const [ordersError, setOrdersError] = useState(null);
-
-  const fetchProducts = async () => {
-    setLoadingProducts(true);
-    setError(null);
-    try {
-      const res = await axios.get(API_PRODUCTS);
-      setProducts(res.data);
-    } catch (e) {
-      setError(
-        e.response?.data?.message || e.message || "Error fetching products",
-      );
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
-
-  const fetchOrders = async () => {
-    setLoadingOrders(true);
-    setOrdersError(null);
-    try {
-      const res = await axios.get(API_ORDERS);
-      setOrders(res.data);
-    } catch (e) {
-      setOrdersError(
-        e.response?.data?.message || e.message || "Orders API not available",
-      );
-    } finally {
-      setLoadingOrders(false);
-    }
-  };
-
-  const fetchReviews = async () => {
-    setLoadingReviews(true);
-    setReviewsError(null);
-    try {
-      const res = await axios.get(API_REVIEWS);
-      setReviews(res.data);
-    } catch (e) {
-      setReviewsError(
-        e.response?.data?.message || e.message || "Error fetching reviews",
-      );
-    } finally {
-      setLoadingReviews(false);
-    }
-  };
-
-  const deleteOrder = async (id) => {
-    if (!window.confirm("Delete order?")) return;
-    try {
-      await axios.delete(`${API_ORDERS}/${id}`);
-      fetchOrders();
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || "Error deleting order");
-    }
-  };
+  const tabs = [
+    { id: "overview", label: "Overview", icon: BarChart3 },
+    { id: "products", label: "Products", icon: Package },
+    { id: "orders", label: "Orders", icon: ShoppingCart },
+    { id: "reviews", label: "Reviews", icon: Star },
+  ];
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  useEffect(() => {
-    if (active === "orders") fetchOrders();
-  }, [active]);
-
-  useEffect(() => {
-    if (active === "reviews") fetchReviews();
-  }, [active]);
-
-  const handleInput = (k, v) => setForm((s) => ({ ...s, [k]: v }));
-
-  const handleSizeToggle = (size) => {
-    setForm((s) => ({
-      ...s,
-      sizes: s.sizes.includes(size)
-        ? s.sizes.filter((sz) => sz !== size)
-        : [...s.sizes, size],
-    }));
-  };
-
-  const submitAdd = async (e) => {
-    e && e.preventDefault();
-    const formData = new FormData();
-    formData.append("name", form.name);
-    formData.append("price", form.price);
-    formData.append("description", form.description);
-    formData.append("details", form.details);
-    formData.append(
-      "variants",
-      JSON.stringify(form.variants.map((v) => ({ color: v.color }))),
-    );
-    formData.append("sizes", JSON.stringify(form.sizes));
-
-    // Append files
-    const fileInputs = document.querySelectorAll(
-      'input[type="file"][name^="variantImage"]',
-    );
-    fileInputs.forEach((input) => {
-      if (input.files[0]) {
-        formData.append(`variantImages`, input.files[0]);
-      }
-    });
-
+  const fetchProducts = async () => {
     try {
-      await axios.post(API_PRODUCTS, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setForm(emptyForm);
-      setShowAddForm(false);
-      fetchProducts();
-      setEditingId(null);
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || "Error adding product");
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const startEdit = (p) => {
-    setEditingId(p._id);
-    setForm({
-      name: p.name || "",
-      price: String(p.price || ""),
-      description: p.description || "",
-      details: p.details || "",
-      variants: Array.isArray(p.variants) ? p.variants : [],
-      sizes: Array.isArray(p.sizes) ? p.sizes : [],
-    });
-    setShowAddForm(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const submitEdit = async (e) => {
-    e && e.preventDefault();
-    if (!editingId) return submitAdd(e);
-    const formData = new FormData();
-    formData.append("name", form.name);
-    formData.append("price", form.price);
-    formData.append("description", form.description);
-    formData.append("details", form.details);
-    formData.append(
-      "variants",
-      JSON.stringify(
-        form.variants.map((v) => ({ color: v.color, image: v.image })),
-      ),
-    );
-    formData.append("sizes", JSON.stringify(form.sizes));
-
-    // Append files
-    const fileInputs = document.querySelectorAll(
-      'input[type="file"][name^="variantImage"]',
-    );
-    fileInputs.forEach((input) => {
-      if (input.files[0]) {
-        formData.append(`variantImages`, input.files[0]);
-      }
-    });
+  const handleProductSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
     try {
-      await axios.put(`${API_PRODUCTS}/${editingId}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setForm(emptyForm);
-      setEditingId(null);
-      setShowAddForm(false);
+      // Upload images and prepare variants
+      const variantsWithImages = await Promise.all(
+        productForm.variants.map(async (variant, index) => {
+          let imagePath = variant.image;
+          if (variant.imageFile) {
+            const fileName = `products/${Date.now()}-${index}-${variant.imageFile.name}`;
+            imagePath = await uploadProductImage(variant.imageFile, fileName);
+          }
+          return {
+            color: variant.color,
+            image:
+              imagePath ||
+              "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_large.png?v=1530129081",
+          };
+        }),
+      );
+
+      const productData = {
+        name: productForm.name,
+        price: parseFloat(productForm.price),
+        description: productForm.description,
+        variants: variantsWithImages,
+        sizes: productForm.sizes,
+      };
+
+      if (editingProduct) {
+        const { error } = await supabase
+          .from("products")
+          .update(productData)
+          .eq("id", editingProduct.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("products").insert([productData]);
+        if (error) throw error;
+      }
+
+      setShowProductModal(false);
+      setEditingProduct(null);
+      resetProductForm();
       fetchProducts();
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || "Error updating product");
+    } catch (error) {
+      alert(error.message || "Error saving product");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const resetProductForm = () => {
+    setProductForm({
+      name: "",
+      price: "",
+      description: "",
+      variants: [{ color: "", imageFile: null, imagePreview: null }],
+      sizes: [],
+    });
+  };
+
+  const startEdit = (product) => {
+    setEditingProduct(product);
+    setProductForm({
+      name: product.name || "",
+      price: String(product.price || ""),
+      description: product.description || "",
+      variants: (product.variants || []).map((v) => ({
+        ...v,
+        imageFile: null,
+        imagePreview: null,
+      })),
+      sizes: product.sizes || [],
+    });
+    setShowProductModal(true);
   };
 
   const deleteProduct = async (id) => {
-    if (!window.confirm("Delete product?")) return;
+    if (!confirm("Are you sure you want to delete this product?")) return;
+
     try {
-      await axios.delete(`${API_PRODUCTS}/${id}`);
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) throw error;
       fetchProducts();
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || "Error deleting product");
+    } catch (error) {
+      alert("Error deleting product");
     }
   };
 
-  const handleReviewInput = (k, v) => setReviewForm((s) => ({ ...s, [k]: v }));
-
-  const submitAddReview = async (e) => {
-    e && e.preventDefault();
-    const formData = new FormData();
-    formData.append("name", reviewForm.name);
-    formData.append("review", reviewForm.review);
-    formData.append("rating", reviewForm.rating);
-
-    const imageInput = document.querySelector(
-      'input[type="file"][name="reviewImage"]',
-    );
-    if (imageInput && imageInput.files[0]) {
-      formData.append("image", imageInput.files[0]);
-    }
-
-    try {
-      await axios.post(API_REVIEWS, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setReviewForm(emptyReviewForm);
-      setShowAddReviewForm(false);
-      fetchReviews();
-      setEditingReviewId(null);
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || "Error adding review");
-    }
+  const addVariant = () => {
+    setProductForm((prev) => ({
+      ...prev,
+      variants: [
+        ...prev.variants,
+        { color: "", imageFile: null, imagePreview: null },
+      ],
+    }));
   };
 
-  const startEditReview = (r) => {
-    setEditingReviewId(r._id);
-    setReviewForm({
-      name: r.name || "",
-      review: r.review || "",
-      rating: r.rating || 5,
-    });
-    setShowAddReviewForm(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const updateVariant = (index, field, value) => {
+    setProductForm((prev) => ({
+      ...prev,
+      variants: prev.variants.map((v, i) =>
+        i === index ? { ...v, [field]: value } : v,
+      ),
+    }));
   };
 
-  const submitEditReview = async (e) => {
-    e && e.preventDefault();
-    if (!editingReviewId) return submitAddReview(e);
-    const formData = new FormData();
-    formData.append("name", reviewForm.name);
-    formData.append("review", reviewForm.review);
-    formData.append("rating", reviewForm.rating);
-
-    const imageInput = document.querySelector(
-      'input[type="file"][name="reviewImage"]',
-    );
-    if (imageInput && imageInput.files[0]) {
-      formData.append("image", imageInput.files[0]);
-    }
-
-    try {
-      await axios.put(`${API_REVIEWS}/${editingReviewId}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setReviewForm(emptyReviewForm);
-      setEditingReviewId(null);
-      setShowAddReviewForm(false);
-      fetchReviews();
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || "Error updating review");
-    }
+  const removeVariant = (index) => {
+    setProductForm((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index),
+    }));
   };
 
-  const deleteReview = async (id) => {
-    if (!window.confirm("Delete review?")) return;
-    try {
-      await axios.delete(`${API_REVIEWS}/${id}`);
-      fetchReviews();
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || "Error deleting review");
-    }
+  const toggleSize = (size) => {
+    setProductForm((prev) => ({
+      ...prev,
+      sizes: prev.sizes.includes(size)
+        ? prev.sizes.filter((s) => s !== size)
+        : [...prev.sizes, size],
+    }));
   };
+
+  const StatCard = ({ title, value, icon: Icon, color }) => (
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+        </div>
+        <div className={`p-3 rounded-lg ${color}`}>
+          <Icon className="w-6 h-6 text-white" />
+        </div>
+      </div>
+    </div>
+  );
+
+  const ProductCard = ({ product }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+      <div className="aspect-square bg-gray-50 flex items-center justify-center p-4">
+        <img
+          src={getProductImageUrl(product.variants?.[0]?.image)}
+          alt={product.name}
+          className="max-w-full max-h-full object-contain"
+        />
+      </div>
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
+        <p className="text-lg font-bold text-amber-600 mt-1">
+          MAD {product.price}
+        </p>
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => startEdit(product)}
+            className="flex-1 bg-blue-50 text-blue-600 py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => deleteProduct(product.id)}
+            className="flex-1 bg-red-50 text-red-600 py-2 px-3 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-white">
-      <SharedHeader />
+    <div className="min-h-screen bg-gray-50">
+      <SharedHeader onMenuClick={() => setSidebarOpen(true)} />
 
-      <div className="max-w-6xl mx-auto px-4 pt-20 pb-12 grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="flex pt-20">
         {/* Sidebar */}
-        <aside className="lg:col-span-1 bg-white border border-slate-200 shadow-lg rounded-lg p-4 h-fit">
-          <h2 className="font-bold text-lg mb-4">Admin</h2>
-          <nav className="flex flex-col gap-2">
-            <button
-              onClick={() => setActive("products")}
-              className={`text-left cursor-pointer px-3 py-2 rounded ${active === "products" ? "bg-amber-800 text-white" : "hover:bg-gray-50"}`}
-            >
-              Products
-            </button>
-            <button
-              onClick={() => setActive("orders")}
-              className={`text-left cursor-pointer px-3 py-2 rounded ${active === "orders" ? "bg-amber-800 text-white" : "hover:bg-gray-50"}`}
-            >
-              Orders
-            </button>
-            <button
-              onClick={() => setActive("reviews")}
-              className={`text-left cursor-pointer px-3 py-2 rounded ${active === "reviews" ? "bg-amber-800 text-white" : "hover:bg-gray-50"}`}
-            >
-              Reviews
-            </button>
-          </nav>
+        <aside
+          className={`
+          fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
+        `}
+        >
+          <div className="p-6 pt-20 lg:pt-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-8">
+              Admin Dashboard
+            </h1>
+
+            <nav className="space-y-2">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                      activeTab === tab.id
+                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
         </aside>
 
-        {/* Main */}
-        <main className="lg:col-span-3">
-          {active === "products" && (
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-extrabold">Products</h1>
-                <div className="flex gap-2">
-                  {!showAddForm && !editingId && (
-                    <button
-                      onClick={() => {
-                        setEditingId(null);
-                        setForm(emptyForm);
-                        setShowAddForm(true);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className="px-4 cursor-pointer py-2 bg-amber-800 text-white rounded-lg font-semibold"
-                    >
-                      Add Product
-                    </button>
-                  )}
-                </div>
+        {/* Overlay for mobile */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 backdrop-blur-xs z-30 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Main content */}
+        <main className="flex-1 p-6 lg:ml-0">
+          {/* Overview Tab */}
+          {activeTab === "overview" && (
+            <div>
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Dashboard Overview
+                </h2>
+                <p className="text-gray-600">
+                  Welcome back! Here's what's happening with your store.
+                </p>
               </div>
 
-              {/* Add / Edit form (shown when adding or editing) */}
-              {(showAddForm || editingId) && (
-                <form
-                  onSubmit={editingId ? submitEdit : submitAdd}
-                  className="bg-white border border-slate-200 shadow-lg rounded-lg p-4 mb-6"
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input
-                      placeholder="Name"
-                      value={form.name}
-                      onChange={(e) => handleInput("name", e.target.value)}
-                      className="border rounded px-3 py-2"
-                    />
-                    <input
-                      placeholder="Price"
-                      value={form.price}
-                      onChange={(e) => handleInput("price", e.target.value)}
-                      className="border rounded px-3 py-2"
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <StatCard
+                  title="Total Products"
+                  value={products.length}
+                  icon={Package}
+                  color="bg-blue-500"
+                />
+                <StatCard
+                  title="Total Revenue"
+                  value="MAD 0"
+                  icon={DollarSign}
+                  color="bg-green-500"
+                />
+                <StatCard
+                  title="Total Orders"
+                  value="0"
+                  icon={ShoppingCart}
+                  color="bg-purple-500"
+                />
+                <StatCard
+                  title="Total Reviews"
+                  value="0"
+                  icon={Star}
+                  color="bg-yellow-500"
+                />
+              </div>
 
-                    {/* Variants as dynamic list of {color,image} */}
-                    <div className="col-span-1 w-full">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Variants
-                      </label>
-                      <div className="space-y-2">
-                        {(form.variants || []).map((v, idx) => (
-                          <div key={idx} className="flex flex-col gap-2">
-                            <input
-                              placeholder="Color"
-                              value={v.color || ""}
-                              onChange={(e) => {
-                                const next = [...form.variants];
-                                next[idx] = {
-                                  ...(next[idx] || {}),
-                                  color: e.target.value,
-                                };
-                                handleInput("variants", next);
-                              }}
-                              className="w-full h-12 border rounded px-3 py-2"
-                            />
-                            <input
-                              type="file"
-                              name={`variantImage${idx}`}
-                              accept="image/*"
-                              className="w-full h-12 border rounded px-3 py-2"
-                            />
-                            {v.image && (
-                              <div className="text-sm text-gray-600 w-full max-h-12 overflow-hidden">
-                                {v.image}
-                              </div>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const next = [...form.variants];
-                                next.splice(idx, 1);
-                                handleInput("variants", next);
-                              }}
-                              className="px-3 py-2 cursor-pointer border rounded bg-red-50 text-red-600 self-center"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleInput("variants", [
-                              ...(form.variants || []),
-                              { color: "", image: "" },
-                            ])
-                          }
-                          className="px-3 py-2 cursor-pointer bg-gray-100 rounded w-full"
-                        >
-                          Add Variant
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Sizes
-                      </label>
-                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                        {["S", "M", "L", "XL", "2XL", "3XL"].map((size) => (
-                          <label key={size} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={form.sizes.includes(size)}
-                              onChange={() => handleSizeToggle(size)}
-                              className="mr-2"
-                            />
-                            {size}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <textarea
-                      placeholder="Short description"
-                      value={form.description}
-                      onChange={(e) =>
-                        handleInput("description", e.target.value)
-                      }
-                      className="border rounded px-3 py-2 sm:col-span-2"
-                    />
-                    <textarea
-                      placeholder="Details (optional)"
-                      value={form.details}
-                      onChange={(e) => handleInput("details", e.target.value)}
-                      className="border rounded px-3 py-2 sm:col-span-2"
-                    />
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      type="submit"
-                      className="px-4 py-2 cursor-pointer bg-amber-800 text-white rounded-lg font-semibold"
-                    >
-                      {editingId ? "Save Changes" : "Create Product"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingId(null);
-                        setForm(emptyForm);
-                        setShowAddForm(false);
-                      }}
-                      className="px-4 py-2 cursor-pointer border rounded-lg"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Products list */}
-              <div>
-                {loadingProducts ? (
-                  <div>Loading products...</div>
-                ) : error ? (
-                  <div className="text-red-700">{error}</div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {products.map((p) => (
-                      <div
-                        key={p._id}
-                        className="bg-white shadow-sm rounded-lg p-4 flex flex-col gap-2"
-                      >
-                        <div className="h-36 flex items-center justify-center bg-gray-50 rounded">
-                          {p.variants && p.variants[0] ? (
-                            // If variant is an object with image path, try to show it, otherwise show placeholder
-                            <img
-                              src={
-                                typeof p.variants[0] === "string"
-                                  ? p.variants[0]
-                                  : p.variants[0].image
-                                    ? p.variants[0].image
-                                    : ""
-                              }
-                              alt="img"
-                              className="max-h-32 object-contain"
-                            />
-                          ) : (
-                            <div className="text-gray-400">No image</div>
-                          )}
-                        </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Recent Products
+                  </h3>
+                  <div className="space-y-3">
+                    {products.slice(0, 5).map((product) => (
+                      <div key={product.id} className="flex items-center gap-3">
+                        <img
+                          src={getProductImageUrl(product.variants?.[0]?.image)}
+                          alt={product.name}
+                          className="w-10 h-10 rounded-lg object-cover"
+                        />
                         <div className="flex-1">
-                          <div className="font-semibold text-gray-900">
-                            {p.name}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            MAD {p.price}
-                          </div>
-                          <div className="text-sm text-gray-600 mt-2">
-                            {p.description}
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mt-3">
-                          <button
-                            onClick={() => startEdit(p)}
-                            className="px-3 py-2 cursor-pointer border rounded"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => deleteProduct(p._id)}
-                            className="px-3 py-2 cursor-pointer bg-red-700 text-white rounded"
-                          >
-                            Delete
-                          </button>
+                          <p className="font-medium text-gray-900 truncate">
+                            {product.name}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            MAD {product.price}
+                          </p>
                         </div>
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
+
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Quick Actions
+                  </h3>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => {
+                        setActiveTab("products");
+                        setShowProductModal(true);
+                      }}
+                      className="w-full bg-amber-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-amber-700 transition-colors flex items-center gap-2"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Add New Product
+                    </button>
+                    <button className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                      View Analytics
+                    </button>
+                  </div>
+                </div>
               </div>
-            </section>
+            </div>
           )}
 
-          {active === "orders" && (
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-extrabold">Orders</h1>
+          {/* Products Tab */}
+          {activeTab === "products" && (
+            <div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                    Products
+                  </h2>
+                  <p className="text-gray-600">Manage your product catalog</p>
+                </div>
+                <button
+                  onClick={() => setShowProductModal(true)}
+                  className="mt-4 sm:mt-0 bg-amber-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-amber-700 transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
+                >
+                  <Plus className="w-5 h-5" />
+                  Add Product
+                </button>
               </div>
 
-              {loadingOrders ? (
-                <div>Loading orders...</div>
-              ) : ordersError ? (
-                <div className="text-red-500">{ordersError}</div>
-              ) : orders.length === 0 ? (
-                <div className="text-gray-600">No orders found.</div>
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+                </div>
               ) : (
-                <div className="space-y-4">
-                  {orders.map((o) => (
-                    <div
-                      key={o._id || o.id || Math.random()}
-                      className="border border-slate-200 shadow-lg rounded-lg p-4"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="font-semibold">
-                            {o.name || o.customerName || "Customer"}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {o.email || o.customerEmail}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {o.phone || o.customerPhone}
-                          </div>
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {new Date(
-                            o.createdAt || o.date || Date.now(),
-                          ).toLocaleString()}
-                        </div>
-                      </div>
-
-                      <div className="mt-3 text-sm text-gray-700">
-                        <div>
-                          Location:{" "}
-                          {o.location || o.address || o.shippingAddress || "-"}
-                        </div>
-                        <div>
-                          Payment: {o.paymentMethod || o.payment || "-"}
-                        </div>
-                        <div className="mt-2">Order Items:</div>
-                        <ul className="list-disc pl-5">
-                          {(o.items || o.order || o.orderItems || []).map(
-                            (it, idx) => (
-                              <li key={idx} className="text-sm">
-                                {typeof it === "string"
-                                  ? it
-                                  : `${it.name || it.product || "Item"} — Color: ${it.color || "-"} • Size: ${it.size || "-"}`}
-                              </li>
-                            ),
-                          )}
-                        </ul>
-
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            onClick={() => deleteOrder(o._id || o.id)}
-                            className="px-3 py-2 cursor-pointer bg-red-700 text-white rounded"
-                          >
-                            Delete Order
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
               )}
-            </section>
+            </div>
           )}
 
-          {active === "reviews" && (
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-extrabold">Reviews</h1>
-                <div className="flex gap-2">
-                  {!showAddReviewForm && !editingReviewId && (
-                    <button
-                      onClick={() => {
-                        setEditingReviewId(null);
-                        setReviewForm(emptyReviewForm);
-                        setShowAddReviewForm(true);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className="px-4 py-2 cursor-pointer bg-amber-800 text-white rounded-lg font-semibold"
-                    >
-                      Add Review
-                    </button>
-                  )}
-                </div>
+          {/* Orders Tab */}
+          {activeTab === "orders" && (
+            <div>
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Orders
+                </h2>
+                <p className="text-gray-600">
+                  Orders functionality coming soon
+                </p>
               </div>
-
-              {/* Add / Edit review form */}
-              {(showAddReviewForm || editingReviewId) && (
-                <form
-                  onSubmit={
-                    editingReviewId ? submitEditReview : submitAddReview
-                  }
-                  className="bg-white border border-slate-200 shadow-lg rounded-lg p-4 mb-6"
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input
-                      placeholder="Customer Name"
-                      value={reviewForm.name}
-                      onChange={(e) =>
-                        handleReviewInput("name", e.target.value)
-                      }
-                      className="border rounded px-3 py-2"
-                    />
-                    <select
-                      value={reviewForm.rating}
-                      onChange={(e) =>
-                        handleReviewInput("rating", Number(e.target.value))
-                      }
-                      className="border rounded px-3 py-2"
-                    >
-                      <option value={5}>5 Stars</option>
-                      <option value={4}>4 Stars</option>
-                      <option value={3}>3 Stars</option>
-                      <option value={2}>2 Stars</option>
-                      <option value={1}>1 Star</option>
-                    </select>
-                    <div className="sm:col-span-2">
-                      <textarea
-                        placeholder="Review text"
-                        value={reviewForm.review}
-                        onChange={(e) =>
-                          handleReviewInput("review", e.target.value)
-                        }
-                        className="border rounded px-3 py-2 w-full h-24"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <input
-                        type="file"
-                        name="reviewImage"
-                        accept="image/*"
-                        className="border rounded px-3 py-2 w-full"
-                      />
-                      {editingReviewId &&
-                        reviews.find((r) => r._id === editingReviewId)
-                          ?.image && (
-                          <div className="mt-2 text-sm text-gray-600">
-                            Current image will be replaced if new file selected.
-                          </div>
-                        )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      type="submit"
-                      className="px-4 py-2 cursor-pointer bg-amber-800 text-white rounded-lg font-semibold"
-                    >
-                      {editingReviewId ? "Save Changes" : "Create Review"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingReviewId(null);
-                        setReviewForm(emptyReviewForm);
-                        setShowAddReviewForm(false);
-                      }}
-                      className="px-4 py-2 border rounded-lg"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Reviews list */}
-              <div>
-                {loadingReviews ? (
-                  <div>Loading reviews...</div>
-                ) : reviewsError ? (
-                  <div className="text-red-700">{reviewsError}</div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {reviews.map((r) => (
-                      <div
-                        key={r._id}
-                        className="bg-white shadow-sm rounded-lg p-4 flex flex-col gap-2"
-                      >
-                        <div className="h-36 flex items-center justify-center bg-gray-50 rounded">
-                          <img
-                            src={r.image || "/user.png"}
-                            alt="reviewer"
-                            className="max-h-32 object-contain rounded"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold">{r.name}</h3>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <span
-                                key={i}
-                                className={
-                                  i < r.rating
-                                    ? "text-yellow-400"
-                                    : "text-gray-300"
-                                }
-                              >
-                                ★
-                              </span>
-                            ))}
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1 line-clamp-3">
-                            {r.review}
-                          </p>
-                        </div>
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => startEditReview(r)}
-                            className="px-3 py-1 cursor-pointer bg-blue-600 text-white rounded text-sm"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => deleteReview(r._id)}
-                            className="px-3 py-1 cursor-pointer bg-red-600 text-white rounded text-sm"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
+                <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Orders Management
+                </h3>
+                <p className="text-gray-600">
+                  This feature is not yet implemented.
+                </p>
               </div>
-            </section>
+            </div>
+          )}
+
+          {/* Reviews Tab */}
+          {activeTab === "reviews" && (
+            <div>
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Reviews
+                </h2>
+                <p className="text-gray-600">
+                  Reviews functionality coming soon
+                </p>
+              </div>
+              <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
+                <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Reviews Management
+                </h3>
+                <p className="text-gray-600">
+                  This feature is not yet implemented.
+                </p>
+              </div>
+            </div>
           )}
         </main>
       </div>
+
+      {/* Product Modal */}
+      {showProductModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-900">
+                  {editingProduct ? "Edit Product" : "Add New Product"}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowProductModal(false);
+                    setEditingProduct(null);
+                    resetProductForm();
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleProductSubmit} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="Product Name"
+                  value={productForm.name}
+                  onChange={(e) =>
+                    setProductForm((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  required
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Price (MAD)"
+                  value={productForm.price}
+                  onChange={(e) =>
+                    setProductForm((prev) => ({
+                      ...prev,
+                      price: e.target.value,
+                    }))
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              <textarea
+                placeholder="Product Description"
+                value={productForm.description}
+                onChange={(e) =>
+                  setProductForm((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent h-24 resize-none"
+                required
+              />
+
+              {/* Variants */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                  Variants
+                </h4>
+                <div className="space-y-4">
+                  {productForm.variants.map((variant, index) => (
+                    <div
+                      key={index}
+                      className="border border-gray-200 rounded-lg p-4"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-medium text-gray-700">
+                          Variant {index + 1}
+                        </span>
+                        {productForm.variants.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeVariant(index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                          type="text"
+                          placeholder="Color"
+                          value={variant.color}
+                          onChange={(e) =>
+                            updateVariant(index, "color", e.target.value)
+                          }
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        />
+
+                        <div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                updateVariant(index, "imageFile", file);
+                                updateVariant(
+                                  index,
+                                  "imagePreview",
+                                  URL.createObjectURL(file),
+                                );
+                              }
+                            }}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
+                          />
+                        </div>
+                      </div>
+
+                      {(variant.imagePreview || variant.image) && (
+                        <div className="mt-3">
+                          <img
+                            src={
+                              variant.imagePreview ||
+                              getProductImageUrl(variant.image)
+                            }
+                            alt="Preview"
+                            className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={addVariant}
+                    className="w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-amber-500 hover:text-amber-600 transition-colors"
+                  >
+                    + Add Variant
+                  </button>
+                </div>
+              </div>
+
+              {/* Sizes */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                  Sizes
+                </h4>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                  {["S", "M", "L", "XL", "2XL", "3XL"].map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => toggleSize(size)}
+                      className={`py-2 px-4 rounded-lg border font-medium transition-colors ${
+                        productForm.sizes.includes(size)
+                          ? "bg-amber-600 text-white border-amber-600"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-amber-500"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-amber-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading
+                    ? "Saving..."
+                    : editingProduct
+                      ? "Update Product"
+                      : "Create Product"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowProductModal(false);
+                    setEditingProduct(null);
+                    resetProductForm();
+                  }}
+                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

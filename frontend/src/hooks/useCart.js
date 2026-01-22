@@ -1,14 +1,26 @@
 import { useCartStore } from "../stores/cartStore";
 import { useAuthStore } from "../stores/authStore";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export const useCart = () => {
   const cart = useCartStore();
   const user = useAuthStore((s) => s.user);
+  const loadingRef = useRef(false);
 
   useEffect(() => {
-    cart.loadCart(user?._id);
-  }, [user?._id]);
+    const loadUserCart = async () => {
+      if (loadingRef.current) return; // Prevent concurrent loads
+      loadingRef.current = true;
+
+      try {
+        await cart.loadCart(user?.id);
+      } finally {
+        loadingRef.current = false;
+      }
+    };
+
+    loadUserCart();
+  }, [user?.id]); // Only depend on user.id
 
   return cart;
 };

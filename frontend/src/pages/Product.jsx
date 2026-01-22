@@ -4,22 +4,7 @@ import { ArrowLeft, ArrowRight, ShoppingCart, X } from "lucide-react";
 import Products from "../components/Products";
 import SharedHeader from "../components/SharedHeader";
 import { useCart } from "../hooks/useCart";
-import axios from "axios";
-// import { useAuthStore } from "../stores/authStore";
-
-const API_URL = import.meta.env.VITE_API_URL;
-const API_ORDERS =
-  import.meta.env.VITE_MODE === "development"
-    ? `http://localhost:5000/api/orders`
-    : `${API_URL}/api/orders`;
-const API_PRODUCTS =
-  import.meta.env.VITE_MODE === "development"
-    ? `http://localhost:5000/api/products`
-    : `${API_URL}/api/products`;
-const BASE_URL =
-  import.meta.env.VITE_MODE === "development"
-    ? "http://localhost:5000"
-    : API_URL;
+import supabase, { getProductImageUrl } from "../utils/supabase";
 
 function Product() {
   const { id } = useParams();
@@ -32,19 +17,31 @@ function Product() {
 
   useEffect(() => {
     let mounted = true;
-    // try backend first
-    axios
-      .get(`${API_PRODUCTS}/${id}`)
-      .then((res) => {
+
+    const fetchProduct = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (error) throw error;
+
         if (!mounted) return;
-        setProduct(res.data);
+        setProduct(data);
         setSelectedVariantIndex(0);
-      })
-      .catch(() => {
-        // product not found or API error — go back to listing
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        if (!mounted) return;
+        // Product not found or error — go back to listing
         navigate("/products");
-      })
-      .finally(() => mounted && setLoading(false));
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchProduct();
 
     return () => {
       mounted = false;
@@ -58,6 +55,20 @@ function Product() {
         <main className="max-w-5xl mx-auto px-4 pt-20 pb-12">
           <div className="py-20 text-center text-gray-600">
             Loading product…
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Safety check for variants
+  if (!product.variants || product.variants.length === 0) {
+    return (
+      <div className="min-h-screen bg-white">
+        <SharedHeader />
+        <main className="max-w-5xl mx-auto px-4 pt-20 pb-12">
+          <div className="py-20 text-center text-gray-600">
+            Product data is incomplete. Please try again later.
           </div>
         </main>
       </div>
@@ -79,7 +90,7 @@ function Product() {
 
   const handleBuyNow = async () => {
     const item = {
-      productId: product._id || null,
+      productId: product.id || null,
       name: product.name,
       color: currentVariant.color,
       size: selectedSize,
@@ -92,7 +103,7 @@ function Product() {
   };
 
   return (
-    <div className="relative min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
       <SharedHeader />
 
       <main className="max-w-5xl mx-auto px-4 pt-20 pb-12">
@@ -102,21 +113,21 @@ function Product() {
             <div className="relative w-full max-w-md">
               <button
                 onClick={prevVariant}
-                className="absolute left-0 top-1/2 -translate-y-1/2  w-10 h-10 bg-gray-100 rounded-r-full flex items-center justify-center shadow hover:bg-gray-200 transition"
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-r-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition border border-gray-200"
                 aria-label="Previous variant"
               >
                 <ArrowLeft className="w-4 h-4 text-gray-700" />
               </button>
 
               <img
-                src={currentVariant.image}
+                src={getProductImageUrl(currentVariant.image)}
                 alt="Product"
                 className="w-full h-auto max-h-100 object-contain rounded-lg shadow-sm border border-gray-100"
               />
 
               <button
                 onClick={nextVariant}
-                className="absolute right-0 top-1/2 -translate-y-1/2  w-10 h-10 bg-gray-100 rounded-l-full flex items-center justify-center shadow hover:bg-gray-200 transition"
+                className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-l-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition border border-gray-200"
                 aria-label="Next variant"
               >
                 <ArrowRight className="w-4 h-4 text-gray-700" />
@@ -125,26 +136,28 @@ function Product() {
           </div>
 
           {/* Details */}
-          <div>
-            <h1 className="text-2xl font-extrabold text-gray-900">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
               {product.name}
             </h1>
-            <p className="mt-2 text-gray-600">{product.description}</p>
-            <p className="mt-4 text-xl font-semibold text-amber-800">
-              ${product.price}
+            <p className="text-gray-600 mb-4">{product.description}</p>
+            <p className="text-2xl font-bold text-amber-600 mb-6">
+              MAD {product.price}
             </p>
 
-            <div className="mt-6">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Colors</h4>
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                Colors
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {product.variants.map((variant, index) => (
                   <button
                     key={variant.color}
                     onClick={() => setSelectedVariantIndex(index)}
-                    className={`px-3 py-1 cursor-pointer rounded-full border transition text-sm ${
+                    className={`px-4 py-2 rounded-lg border font-medium transition-colors ${
                       selectedVariantIndex === index
-                        ? "bg-amber-800 text-white border-amber-800"
-                        : "bg-white text-gray-700 border-gray-200"
+                        ? "bg-amber-600 text-white border-amber-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-amber-500"
                     }`}
                     aria-label={`Select color ${variant.color}`}
                   >
@@ -154,9 +167,11 @@ function Product() {
               </div>
             </div>
 
-            <div className="mt-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Sizes</h4>
-              <div className="flex flex-wrap gap-2">
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                Sizes
+              </h4>
+              <div className="grid grid-cols-3 gap-2">
                 {["S", "M", "L", "XL", "2XL", "3XL"].map((size) => {
                   const isAvailable = product.sizes.includes(size);
                   return (
@@ -164,12 +179,12 @@ function Product() {
                       key={size}
                       onClick={() => isAvailable && setSelectedSize(size)}
                       disabled={!isAvailable}
-                      className={`px-3 py-1 rounded border text-sm transition ${
+                      className={`py-2 px-3 rounded-lg border font-medium transition-colors ${
                         selectedSize === size && isAvailable
-                          ? "bg-amber-800 text-white cursor-pointer border-amber-800"
+                          ? "bg-amber-600 text-white border-amber-600"
                           : isAvailable
-                            ? "bg-white text-gray-700 cursor-pointer border-gray-200"
-                            : "bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed"
+                            ? "bg-white text-gray-700 border-gray-300 hover:border-amber-500"
+                            : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
                       }`}
                     >
                       {size}
@@ -179,16 +194,16 @@ function Product() {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleAddToCart}
-                className="w-full sm:flex-1 px-4 py-3 bg-amber-800 cursor-pointer text-white rounded-lg font-semibold hover:bg-amber-900 transition flex items-center justify-center gap-2"
+                className="flex-1 bg-amber-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-amber-700 transition-colors flex items-center justify-center gap-2"
               >
-                <ShoppingCart size={16} /> Add to Cart
+                <ShoppingCart size={18} /> Add to Cart
               </button>
               <button
                 onClick={handleBuyNow}
-                className="w-full sm:flex-1 px-4 py-3 border cursor-pointer border-gray-200 rounded-lg text-gray-800 hover:shadow-sm transition"
+                className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
               >
                 Buy Now
               </button>
@@ -196,9 +211,13 @@ function Product() {
           </div>
         </div>
 
-        <section className="mt-10">
-          <h3 className="text-lg font-semibold mb-4">You may also like</h3>
-          <Products title="Other Products" excludeId={id} />
+        <section className="mt-12">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">
+              You may also like
+            </h3>
+            <Products title="Other Products" excludeId={id} />
+          </div>
         </section>
       </main>
     </div>

@@ -1,17 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingBag, Star } from "lucide-react";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL;
-const API_PRODUCTS =
-  import.meta.env.VITE_MODE === "development"
-    ? `http://localhost:5000/api/products`
-    : `${API_URL}/api/products`;
-const BASE_URL =
-  import.meta.env.VITE_MODE === "development"
-    ? "http://localhost:5000"
-    : API_URL;
+import supabase, { getProductImageUrl } from "../utils/supabase";
 
 function Products({ title, margin, excludeId, limit } = {}) {
   const [products, setProducts] = useState([]);
@@ -20,19 +10,32 @@ function Products({ title, margin, excludeId, limit } = {}) {
 
   useEffect(() => {
     let mounted = true;
-    axios
-      .get(API_PRODUCTS)
-      .then((res) => {
+
+    const fetchProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
         if (!mounted) return;
-        setProducts(limit ? (res.data || []).slice(0, limit) : res.data || []);
-      })
-      .catch((err) => {
-        console.warn("Failed to load products from API:", err.message || err);
+        setProducts(limit ? (data || []).slice(0, limit) : data || []);
+      } catch (err) {
+        console.warn(
+          "Failed to load products from Supabase:",
+          err.message || err,
+        );
         if (!mounted) return;
         setProducts([]);
         setError("Unable to load products");
-      })
-      .finally(() => mounted && setLoading(false));
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchProducts();
 
     return () => {
       mounted = false;
@@ -82,7 +85,7 @@ function Products({ title, margin, excludeId, limit } = {}) {
                 {/* Image Container */}
                 <div className="relative p-6 h-52 sm:h-64 flex items-center justify-center overflow-hidden">
                   <img
-                    src={product.variants?.[0]?.image || ""}
+                    src={getProductImageUrl(product.variants?.[0]?.image)}
                     alt="product image"
                     className="max-h-48 max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
                   />
