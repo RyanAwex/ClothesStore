@@ -19,9 +19,9 @@ function Cart() {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCart();
 
   const subtotal = getCartTotal();
-  const tax = subtotal * 0.05; // 5% tax
-  const shipping = subtotal > 300 ? 0 : 30; // Free shipping over MAD 300
-  const total = subtotal + tax + shipping;
+  // const tax = subtotal * 0.05; // 5% tax
+  const shipping = subtotal > 200 ? 0 : 30; // Free shipping over MAD 200
+  const total = subtotal + shipping;
 
   if (cartItems.length === 0) {
     return (
@@ -158,7 +158,7 @@ function Cart() {
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="p-6">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                  <div className="flex flex-col items-center sm:flex-row sm:justify-between sm:items-center gap-6">
                     {/* Product Image */}
                     <div className="relative shrink-0">
                       <div className="w-24 h-24 sm:w-28 sm:h-28 bg-linear-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden">
@@ -177,32 +177,36 @@ function Cart() {
 
                     {/* Product Details */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-amber-600 transition-colors">
-                        {item.name}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
-                        <span className="flex items-center gap-1">
-                          <div
-                            className="w-4 h-4 rounded-full border-2 border-gray-300"
-                            style={{
-                              backgroundColor: item.variant.color.toLowerCase(),
-                            }}
-                          ></div>
-                          {item.variant.color}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium">Size:</span> {item.size}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-2xl font-black text-amber-600">
-                          MAD {item.price}
-                        </p>
+                      <div className="flex flex-col items-center justify-center sm:items-start sm:justify-start">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-amber-600 transition-colors text-center sm:text-left">
+                          {item.name}
+                        </h3>
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-sm text-gray-600 mb-3">
+                          <span className="flex items-center gap-1">
+                            <div
+                              className="w-4 h-4 rounded-full border-2 border-gray-300"
+                              style={{
+                                backgroundColor:
+                                  item.variant.color.toLowerCase(),
+                              }}
+                            ></div>
+                            {item.variant.color}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="font-medium">Size:</span>{" "}
+                            {item.size}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-center sm:justify-start">
+                          <p className="text-2xl font-black text-amber-600">
+                            MAD {item.price}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
                     {/* Quantity Controls */}
-                    <div className="flex flex-col items-end gap-4">
+                    <div className="flex flex-col items-center gap-4">
                       <div className="flex items-center bg-gray-100 rounded-xl p-1">
                         <button
                           onClick={() =>
@@ -264,12 +268,12 @@ function Cart() {
                   </span>
                 </div>
 
-                <div className="flex justify-between items-center">
+                {/* <div className="flex justify-between items-center">
                   <span className="text-gray-600">Tax</span>
                   <span className="font-semibold text-gray-900">
                     MAD {tax.toFixed(2)}
                   </span>
-                </div>
+                </div> */}
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Shipping</span>
@@ -280,8 +284,11 @@ function Cart() {
 
                 {shipping > 0 && (
                   <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-                    Add MAD {(300 - subtotal).toFixed(2)} more for free
-                    shipping!
+                    Add MAD{" "}
+                    <span className="text-amber-600">
+                      {(300 - subtotal).toFixed(2)}
+                    </span>{" "}
+                    more for free shipping!
                   </div>
                 )}
 

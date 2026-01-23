@@ -69,7 +69,7 @@ function Hero() {
             <div className="flex flex-col sm:flex-row gap-4 pt-6">
               <Link
                 to="/products"
-                className="group inline-flex items-center justify-center gap-2 md:gap-4 px-4 py-3 md:px-8 md:py-4 bg-linear-to-r from-purple-600 via-pink-600 to-red-600 hover:from-purple-500 hover:via-pink-500 hover:to-red-500 text-white rounded-xl md:rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 font-bold text-md md:text-lg hover:scale-105 active:scale-95 transform hover:-translate-y-1"
+                className="group inline-flex items-center justify-center gap-2 md:gap-4 px-4 py-3 md:px-6  bg-linear-to-r from-purple-600 via-pink-600 to-red-600 hover:from-purple-500 hover:via-pink-500 hover:to-red-500 text-white rounded-xl md:rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 font-bold text-md md:text-lg hover:scale-105 active:scale-95 transform hover:-translate-y-1"
               >
                 <ShoppingBag className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
                 Shop Collection
@@ -77,7 +77,7 @@ function Hero() {
               </Link>
               <Link
                 to="/products"
-                className="group inline-flex items-center justify-center gap-2 md:gap-4 px-4 py-3 md:px-8 md:py-4 border-2 border-purple-200 text-purple-700 rounded-xl md:rounded-2xl hover:bg-purple-50 hover:border-purple-300 transition-all duration-300 font-bold text-md md:text-lg backdrop-blur-sm hover:shadow-lg transform hover:scale-105"
+                className="group inline-flex items-center justify-center gap-2 md:gap-4 px-4 py-3 md:px-6  border-2 border-purple-200 text-purple-700 rounded-xl md:rounded-2xl hover:bg-purple-50 hover:border-purple-300 transition-all duration-300 font-bold text-md md:text-lg backdrop-blur-sm hover:shadow-lg transform hover:scale-105"
               >
                 <Heart className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 Explore Trends
