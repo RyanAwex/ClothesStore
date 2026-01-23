@@ -168,7 +168,7 @@ function Login() {
 
             <button
               type="submit"
-              className="w-full py-3 bg-amber-800 text-white rounded-lg font-semibold hover:bg-amber-900 transition"
+              className="w-full py-3 bg-purple-800 text-white rounded-lg font-semibold hover:bg-purple-900 transition"
               disabled={loading}
             >
               {loading

@@ -11,6 +11,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import Dashboard from "./pages/Dashboard";
 import { useAuthStore } from "./stores/authStore";
 import ForgotPassword from "./pages/ForgotPassword";
+import Profile from "./pages/Profile";
 import supabase from "./utils/supabase";
 
 function ScrollToTop() {
@@ -51,7 +52,7 @@ const ProtectedRoute = ({ children }) => {
           </p>
           <Link
             to="/auth"
-            className="px-6 py-3 bg-amber-800 text-white rounded-lg hover:bg-amber-900 transition"
+            className="px-6 py-3 bg-purple-800 text-white rounded-lg hover:bg-purple-900 transition"
           >
             Go to Login
           </Link>
@@ -127,6 +128,7 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<SecuredDashboard />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </div>
   );

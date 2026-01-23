@@ -156,7 +156,7 @@ function Product() {
                     onClick={() => setSelectedVariantIndex(index)}
                     className={`px-4 py-2 rounded-lg border font-medium transition-colors ${
                       selectedVariantIndex === index
-                        ? "bg-amber-600 text-white border-amber-600"
+                        ? "bg-purple-600 text-white border-purple-600"
                         : "bg-white text-gray-700 border-gray-300 hover:border-amber-500"
                     }`}
                     aria-label={`Select color ${variant.color}`}
@@ -181,7 +181,7 @@ function Product() {
                       disabled={!isAvailable}
                       className={`py-2 px-3 rounded-lg border font-medium transition-colors ${
                         selectedSize === size && isAvailable
-                          ? "bg-amber-600 text-white border-amber-600"
+                          ? "bg-purple-600 text-white border-purple-600"
                           : isAvailable
                             ? "bg-white text-gray-700 border-gray-300 hover:border-amber-500"
                             : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
@@ -197,7 +197,7 @@ function Product() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleAddToCart}
-                className="flex-1 bg-amber-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-amber-700 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
               >
                 <ShoppingCart size={18} /> Add to Cart
               </button>

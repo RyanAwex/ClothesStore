@@ -20,13 +20,35 @@ import {
   TrendingUp,
   Users,
   DollarSign,
+  CheckCircle,
+  Clock,
+  Truck,
+  XCircle,
 } from "lucide-react";
 
 function Dashboard() {
   const user = useAuthStore((s) => s.user);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+
+  // Debug logging
+  // useEffect(() => {
+  //   console.log("Dashboard Debug:");
+  //   console.log("- User:", user);
+  //   console.log("- User metadata:", user?.app_metadata);
+  //   console.log("- User role:", user?.app_metadata?.role);
+  //   console.log("- Is Admin:", isAdmin);
+  // }, [user, isAdmin]);
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [reviewForm, setReviewForm] = useState({
+    rating: 5,
+    review: "",
+  });
   const [loading, setLoading] = useState(true);
 
   // Form states
@@ -49,6 +71,40 @@ function Dashboard() {
 
   useEffect(() => {
     fetchProducts();
+    fetchOrders();
+    fetchReviews();
+
+    // Set up real-time subscription for orders
+    const ordersSubscription = supabase
+      .channel("orders_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        (payload) => {
+          console.log("Order change detected:", payload);
+          fetchOrders(); // Refresh orders when any change occurs
+        },
+      )
+      .subscribe();
+
+    // Set up real-time subscription for reviews
+    const reviewsSubscription = supabase
+      .channel("reviews_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reviews" },
+        (payload) => {
+          console.log("Review change detected:", payload);
+          fetchReviews(); // Refresh reviews when any change occurs
+        },
+      )
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      ordersSubscription.unsubscribe();
+      reviewsSubscription.unsubscribe();
+    };
   }, []);
 
   const fetchProducts = async () => {
@@ -64,6 +120,53 @@ function Dashboard() {
       console.error("Error fetching products:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      // console.log(
+      //   "Fetching orders... User:",
+      //   user,
+      //   "Is Admin:",
+      //   user?.app_metadata?.role === "admin",
+      // );
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Supabase error fetching orders:", error);
+        throw error;
+      }
+      // console.log("Orders fetched successfully:", data?.length || 0, "orders");
+      setOrders(data || []);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setOrders([]);
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select(
+          `
+          *,
+          products (
+            id,
+            name
+          )
+        `,
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setReviews(data || []);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
     }
   };
 
@@ -157,6 +260,107 @@ function Dashboard() {
     }
   };
 
+  const updateOrderStatus = async (orderId, newStatus) => {
+    console.log("Updating order status:", orderId, newStatus);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq("id", orderId);
+
+      if (error) {
+        console.error("Error updating order status:", error);
+        throw error;
+      }
+      console.log("Order status updated successfully");
+      // fetchOrders(); // Removed since real-time subscription will handle this
+    } catch (error) {
+      console.error("Error in updateOrderStatus:", error);
+      alert("Error updating order status: " + error.message);
+    }
+  };
+
+  const deleteOrder = async (orderId) => {
+    if (
+      !confirm(
+        "Are you sure you want to cancel and delete this order? This action cannot be undone.",
+      )
+    )
+      return;
+
+    console.log("Attempting to delete order:", orderId);
+    console.log("Current user:", user);
+    console.log("Is admin:", isAdmin);
+
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .delete()
+        .eq("id", orderId);
+
+      if (error) {
+        console.error("Supabase error deleting order:", error);
+        throw error;
+      }
+
+      console.log("Order deleted successfully, response:", data);
+      alert("Order deleted successfully");
+      // fetchOrders(); // Removed since real-time subscription will handle this
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      alert("Error deleting order: " + error.message);
+    }
+  };
+
+  const deleteReview = async (reviewId) => {
+    if (!confirm("Are you sure you want to delete this review?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("reviews")
+        .delete()
+        .eq("id", reviewId);
+      if (error) throw error;
+      // fetchReviews(); // Removed since real-time subscription will handle this
+    } catch (error) {
+      alert("Error deleting review");
+    }
+  };
+
+  const openEditReviewModal = (review) => {
+    setEditingReview(review);
+    setReviewForm({
+      rating: review.rating,
+      review: review.review,
+    });
+    setShowReviewModal(true);
+  };
+
+  const updateReview = async (e) => {
+    e.preventDefault();
+
+    try {
+      const { error } = await supabase
+        .from("reviews")
+        .update({
+          rating: reviewForm.rating,
+          review: reviewForm.review,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", editingReview.id);
+
+      if (error) throw error;
+
+      setShowReviewModal(false);
+      setEditingReview(null);
+      setReviewForm({ rating: 5, review: "" });
+      // fetchReviews(); // Removed since real-time subscription will handle this
+    } catch (error) {
+      console.error("Error updating review:", error);
+      alert("Error updating review: " + error.message);
+    }
+  };
+
   const addVariant = () => {
     setProductForm((prev) => ({
       ...prev,
@@ -217,7 +421,7 @@ function Dashboard() {
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
-        <p className="text-lg font-bold text-amber-600 mt-1">
+        <p className="text-lg font-bold text-purple-600 mt-1">
           MAD {product.price}
         </p>
         <div className="flex gap-2 mt-3">
@@ -267,7 +471,7 @@ function Dashboard() {
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === tab.id
-                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                        ? "bg-purple-50 text-purple-700 border border-purple-200"
                         : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
@@ -311,19 +515,19 @@ function Dashboard() {
                 />
                 <StatCard
                   title="Total Revenue"
-                  value="MAD 0"
+                  value={`MAD ${orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0).toFixed(2)}`}
                   icon={DollarSign}
                   color="bg-green-500"
                 />
                 <StatCard
                   title="Total Orders"
-                  value="0"
+                  value={orders.length}
                   icon={ShoppingCart}
                   color="bg-purple-500"
                 />
                 <StatCard
                   title="Total Reviews"
-                  value="0"
+                  value={reviews.length}
                   icon={Star}
                   color="bg-yellow-500"
                 />
@@ -365,7 +569,7 @@ function Dashboard() {
                         setActiveTab("products");
                         setShowProductModal(true);
                       }}
-                      className="w-full bg-amber-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-amber-700 transition-colors flex items-center gap-2"
+                      className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
                     >
                       <Plus className="w-5 h-5" />
                       Add New Product
@@ -391,7 +595,7 @@ function Dashboard() {
                 </div>
                 <button
                   onClick={() => setShowProductModal(true)}
-                  className="mt-4 sm:mt-0 bg-amber-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-amber-700 transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
+                  className="mt-4 sm:mt-0 bg-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
                 >
                   <Plus className="w-5 h-5" />
                   Add Product
@@ -417,21 +621,158 @@ function Dashboard() {
             <div>
               <div className="mb-8">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  Orders
-                </h2>
-                <p className="text-gray-600">
-                  Orders functionality coming soon
-                </p>
-              </div>
-              <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
-                <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
                   Orders Management
-                </h3>
-                <p className="text-gray-600">
-                  This feature is not yet implemented.
-                </p>
+                </h2>
+                <p className="text-gray-600">View and manage customer orders</p>
               </div>
+
+              {orders.length === 0 ? (
+                <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
+                  <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Orders Yet
+                  </h3>
+                  <p className="text-gray-600">
+                    Orders will appear here once customers start placing them.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {orders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
+                    >
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            Order #{order.id.slice(-8)}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4 mt-2 lg:mt-0">
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              order.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : order.status === "processing"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : order.status === "shipped"
+                                    ? "bg-purple-100 text-purple-800"
+                                    : order.status === "delivered"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {order.status.charAt(0).toUpperCase() +
+                              order.status.slice(1)}
+                          </span>
+                          <span className="text-lg font-bold text-amber-600">
+                            MAD {order.total}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">
+                            Customer
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {order.customer_name}
+                          </p>
+                          <p className="text-sm text-gray-600">{order.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">
+                            Contact
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {order.phone || "N/A"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">
+                            Payment
+                          </p>
+                          <p className="text-sm text-gray-600 capitalize">
+                            {order.payment_method}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          Items
+                        </p>
+                        <div className="space-y-2">
+                          {order.items.map((item, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-3 text-sm"
+                            >
+                              <span className="font-medium">{item.name}</span>
+                              <span className="text-gray-600">
+                                {item.color} • {item.size} • Qty:{" "}
+                                {item.quantity}
+                              </span>
+                              <span className="text-amber-600 font-medium">
+                                MAD {item.price}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {order.status !== "delivered" &&
+                        order.status !== "cancelled" && (
+                          <div className="flex gap-2">
+                            {order.status === "pending" && (
+                              <button
+                                onClick={() =>
+                                  updateOrderStatus(order.id, "processing")
+                                }
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                              >
+                                Start Processing
+                              </button>
+                            )}
+                            {order.status === "processing" && (
+                              <button
+                                onClick={() =>
+                                  updateOrderStatus(order.id, "shipped")
+                                }
+                                className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                              >
+                                Mark as Shipped
+                              </button>
+                            )}
+                            {order.status === "shipped" && (
+                              <button
+                                onClick={() =>
+                                  updateOrderStatus(order.id, "delivered")
+                                }
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                              >
+                                Mark as Delivered
+                              </button>
+                            )}
+                            {order.status !== "cancelled" && (
+                              <button
+                                onClick={() => deleteOrder(order.id)}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                              >
+                                Cancel Order
+                              </button>
+                            )}
+                          </div>
+                        )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -440,21 +781,116 @@ function Dashboard() {
             <div>
               <div className="mb-8">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  Reviews
+                  Reviews Management
                 </h2>
                 <p className="text-gray-600">
-                  Reviews functionality coming soon
+                  Manage customer reviews and feedback
                 </p>
               </div>
-              <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
-                <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Reviews Management
-                </h3>
-                <p className="text-gray-600">
-                  This feature is not yet implemented.
-                </p>
-              </div>
+
+              {reviews.length === 0 ? (
+                <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
+                  <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Reviews Yet
+                  </h3>
+                  <p className="text-gray-600">
+                    Reviews will appear here once customers start leaving
+                    feedback.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {reviews.map((review) => (
+                    <div
+                      key={review.id}
+                      className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                            <span className="text-gray-600 font-semibold">
+                              {review.user_name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">
+                              {review.user_name}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {new Date(review.created_at).toLocaleDateString()}
+                            </p>
+                            <div className="flex items-center gap-1 mt-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < review.rating
+                                      ? "text-yellow-400 fill-current"
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              ))}
+                              <span className="text-sm text-gray-600 ml-2">
+                                {review.rating}/5
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openEditReviewModal(review)}
+                            className="text-blue-500 hover:text-blue-700 p-2"
+                            title="Edit review"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => deleteReview(review.id)}
+                            className="text-red-500 hover:text-red-700 p-2"
+                            title="Delete review"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          Product: {review.products?.name || "Unknown Product"}
+                        </p>
+                        <p className="text-gray-700 italic">
+                          "{review.review}"
+                        </p>
+                      </div>
+
+                      {review.image && (
+                        <div className="mb-4">
+                          <img
+                            src={review.image}
+                            alt="Review image"
+                            className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-4">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            review.is_verified
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {review.is_verified
+                            ? "Verified Purchase"
+                            : "Unverified"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </main>
@@ -578,7 +1014,7 @@ function Dashboard() {
                                 );
                               }
                             }}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                           />
                         </div>
                       </div>
@@ -621,7 +1057,7 @@ function Dashboard() {
                       onClick={() => toggleSize(size)}
                       className={`py-2 px-4 rounded-lg border font-medium transition-colors ${
                         productForm.sizes.includes(size)
-                          ? "bg-amber-600 text-white border-amber-600"
+                          ? "bg-purple-600 text-white border-purple-600"
                           : "bg-white text-gray-700 border-gray-300 hover:border-amber-500"
                       }`}
                     >
@@ -635,7 +1071,7 @@ function Dashboard() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-amber-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading
                     ? "Saving..."
@@ -651,6 +1087,84 @@ function Dashboard() {
                     resetProductForm();
                   }}
                   className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Review Modal */}
+      {showReviewModal && editingReview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900">Edit Review</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Review by {editingReview.user_name} for{" "}
+                {editingReview.products?.name || "Unknown Product"}
+              </p>
+            </div>
+
+            <form onSubmit={updateReview} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rating
+                </label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() =>
+                        setReviewForm({ ...reviewForm, rating: star })
+                      }
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-6 h-6 ${
+                          star <= reviewForm.rating
+                            ? "text-yellow-400 fill-current"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Review
+                </label>
+                <textarea
+                  value={reviewForm.review}
+                  onChange={(e) =>
+                    setReviewForm({ ...reviewForm, review: e.target.value })
+                  }
+                  placeholder="Update the review text..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent h-24 resize-none"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                >
+                  Update Review
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReviewModal(false);
+                    setEditingReview(null);
+                    setReviewForm({ rating: 5, review: "" });
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>

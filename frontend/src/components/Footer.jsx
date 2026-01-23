@@ -19,21 +19,21 @@ function Footer() {
             <div className="flex space-x-3">
               <a
                 href="#"
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-amber-50 transition"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-purple-50 transition"
                 aria-label="Facebook"
               >
                 <Facebook size={16} />
               </a>
               <a
                 href="#"
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-amber-50 transition"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-purple-50 transition"
                 aria-label="Instagram"
               >
                 <Instagram size={16} />
               </a>
               <a
                 href="#"
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-amber-50 transition"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-purple-50 transition"
                 aria-label="Twitter"
               >
                 <Twitter size={16} />
@@ -121,7 +121,7 @@ function Footer() {
                 placeholder="Enter your email"
                 className="px-4 py-2 bg-gray-50  border border-gray-200 rounded-l-full focus:outline-none focus:border-amber-300 flex-1 min-w-50 md:w-64 shadow-sm"
               />
-              <button className="px-6 py-2 bg-amber-800 text-white border border-amber-800 font-semibold rounded-r-full hover:bg-amber-900 transition cursor-pointer">
+              <button className="px-6 py-2 bg-purple-800 text-white border border-purple-800 font-semibold rounded-r-full hover:bg-purple-900 transition cursor-pointer">
                 Subscribe
               </button>
             </div>
