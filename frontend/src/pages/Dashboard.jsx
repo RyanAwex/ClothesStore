@@ -508,11 +508,14 @@ function Dashboard() {
 
   const ProductCard = ({ product }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-      <div className="aspect-square bg-gray-50 flex items-center justify-center p-4">
+      <div
+        className="bg-gray-50 flex items-center justify-center p-4"
+        style={{ aspectRatio: "4 / 3" }}
+      >
         <img
           src={getProductImageUrl(product.variants?.[0]?.image)}
           alt={product.name}
-          className="max-w-full max-h-full object-contain"
+          className="w-full h-full object-cover rounded-xl"
         />
       </div>
       <div className="p-4 pt-3 relative">
@@ -1219,7 +1222,7 @@ function Dashboard() {
                   <div className="mt-4">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-semibold text-gray-900">Select Categories</span>
-                      <button type="button" onClick={closeCategoryPicker} className="text-gray-500 hover:text-gray-800">Close</button>
+                      <button type="button" onClick={closeCategoryPicker} className="text-red-500 hover:text-red-600 hover:underline">Close</button>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {CATEGORIES.map((cat) => (
@@ -1227,7 +1230,7 @@ function Dashboard() {
                           key={cat}
                           type="button"
                           onClick={() => toggleCategory(cat)}
-                          className={`py-2 px-3 rounded-lg border text-sm font-medium text-left ${
+                          className={`py-2 px-3 rounded-lg border text-sm font-medium text-left cursor-pointer ${
                             productForm.categories.includes(cat)
                               ? "bg-purple-100 text-purple-800 border-purple-200"
                               : "bg-white text-gray-700 border-gray-300 hover:border-purple-500"

@@ -13,7 +13,7 @@ function Home() {
       <SharedHeader />
       <Hero />
       <Products title="Our Latest Products" limit={6} />
-      <div className="flex justify-center mt-6">
+      <div className="flex justify-center lg:mt-6">
         <Link
           to="/products"
           className="text-md text-gray-900 flex items-center gap-1 hover:underline group"
