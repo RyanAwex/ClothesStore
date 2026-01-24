@@ -132,16 +132,19 @@ function Products({ title, margin, excludeId, limit } = {}) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {items.map((product, index) => (
               <div
-                className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-amber-200 transform hover:-translate-y-2"
+                className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-amber-200 transform hover:-translate-y-2 max-w-[350px] min-w-[312px] w-full mx-auto"
                 key={product._id || product.id}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 {/* Enhanced Image Container */}
-                <div className="relative p-8 h-56 sm:h-64 flex items-center justify-center overflow-hidden bg-linear-to-br from-gray-50 to-white">
+                <div
+                  className="relative overflow-hidden bg-linear-to-br from-gray-50 to-white"
+                  style={{ aspectRatio: "4 / 3" }}
+                >
                   <img
                     src={getProductImageUrl(product.variants?.[0]?.image)}
                     alt="product image"
-                    className="max-h-56 max-w-full object-contain group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
 
                   {/* Enhanced Hover overlay */}
@@ -243,9 +246,9 @@ function Products({ title, margin, excludeId, limit } = {}) {
                   </div> */}
 
                   {/* Enhanced Price and CTA */}
-                  <div className="flex items-center justify-between sm:flex-col sm:items-baseline pt-2">
+                  <div className="flex items-center justify-between pt-2">
                     <div className="space-y-1">
-                      <p className="text-xl sm:text-2xl font-black text-gray-900">
+                      <p className="text-xl font-black text-gray-900">
                         MAD {product.price}
                       </p>
                       <p className="text-sm text-gray-500 line-through font-medium">
@@ -255,7 +258,7 @@ function Products({ title, margin, excludeId, limit } = {}) {
 
                     <Link
                       to={`/product/${product._id || product.id}`}
-                      className="group/btn inline-flex items-center gap-2 sm:gap-3 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 md:py-3 rounded-lg md:rounded-2xl font-bold transition-all duration-300 hover:shadow-xl transform hover:scale-105 active:scale-95 sm:mt-2"
+                      className="group/btn inline-flex items-center gap-2 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300 hover:shadow-xl transform hover:scale-105 active:scale-95"
                     >
                       <ShoppingBag className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
                       View Details

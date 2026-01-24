@@ -4,6 +4,7 @@ import { useAuthStore } from "../stores/authStore";
 import supabase, {
   uploadProductImage,
   getProductImageUrl,
+  deleteProductImages,
 } from "../utils/supabase";
 import {
   BarChart3,
@@ -24,6 +25,7 @@ import {
   Clock,
   Truck,
   XCircle,
+  Settings,
 } from "lucide-react";
 
 function Dashboard() {
@@ -50,9 +52,13 @@ function Dashboard() {
     review: "",
   });
   const [loading, setLoading] = useState(true);
+  const [optionsOpenProductId, setOptionsOpenProductId] = useState(null);
+  const [categoryEditorSelections, setCategoryEditorSelections] = useState([]);
+  const [updatingCategoryId, setUpdatingCategoryId] = useState(null);
 
   // Form states
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
     name: "",
@@ -60,7 +66,34 @@ function Dashboard() {
     description: "",
     variants: [{ color: "", imageFile: null, imagePreview: null }],
     sizes: [],
+    categories: [],
   });
+
+  // Available categories
+  const CATEGORIES = [
+    "Djellabas",
+    "Caftans",
+    "Takchitas",
+    "Gandouras",
+    "Abayas",
+    "Kimonos & Cardigans",
+    "Belghas (Slippers)",
+    "T-shirts & Tops",
+    "Dresses",
+    "Shirts & Blouses",
+    "Trousers & Jeans",
+    "Skirts",
+    "Jackets & Coats",
+    "Sportswear",
+    "Modest Wear",
+    "Handbags & Clutches",
+    "Heels",
+    "Sneakers",
+    "Jewelry",
+    "Watches",
+    "Hijabs & Scarves",
+    "Belts",
+  ];
 
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
@@ -157,7 +190,8 @@ function Dashboard() {
           *,
           products (
             id,
-            name
+            name,
+            categories
           )
         `,
         )
@@ -198,6 +232,7 @@ function Dashboard() {
         description: productForm.description,
         variants: variantsWithImages,
         sizes: productForm.sizes,
+        categories: productForm.categories,
       };
 
       if (editingProduct) {
@@ -229,6 +264,7 @@ function Dashboard() {
       description: "",
       variants: [{ color: "", imageFile: null, imagePreview: null }],
       sizes: [],
+      categories: [],
     });
   };
 
@@ -244,6 +280,7 @@ function Dashboard() {
         imagePreview: null,
       })),
       sizes: product.sizes || [],
+      categories: product.categories || [],
     });
     setShowProductModal(true);
   };
@@ -252,6 +289,22 @@ function Dashboard() {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
+      // Attempt to delete associated images from storage first.
+      const product = products.find((p) => p.id === id);
+      if (product) {
+        const imagePaths = (product.variants || [])
+          .map((v) => v.image)
+          .filter(Boolean);
+
+        try {
+          await deleteProductImages(imagePaths);
+        } catch (err) {
+          // Log but continue with DB deletion - storage delete failures
+          // shouldn't leave the app in a broken state.
+          console.error("Error deleting product images:", err);
+        }
+      }
+
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
       fetchProducts();
@@ -396,6 +449,49 @@ function Dashboard() {
     }));
   };
 
+  const toggleCategory = (category) => {
+    setProductForm((prev) => ({
+      ...prev,
+      categories: prev.categories.includes(category)
+        ? prev.categories.filter((c) => c !== category)
+        : [...prev.categories, category],
+    }));
+  };
+
+  // Open the inline category editor for a product
+  // For Add/Edit modal: open inline category picker
+  const openCategoryPicker = () => setShowCategoryPicker(true);
+  const closeCategoryPicker = () => setShowCategoryPicker(false);
+
+  const closeCategoryEditor = () => {
+    setOptionsOpenProductId(null);
+    setCategoryEditorSelections([]);
+  };
+
+  const toggleEditorCategory = (cat) => {
+    setCategoryEditorSelections((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
+    );
+  };
+
+  const saveProductCategories = async (productId) => {
+    setUpdatingCategoryId(productId);
+    try {
+      const { error } = await supabase
+        .from("products")
+        .update({ categories: categoryEditorSelections })
+        .eq("id", productId);
+      if (error) throw error;
+      await fetchProducts();
+      closeCategoryEditor();
+    } catch (err) {
+      console.error("Error updating categories:", err);
+      alert("Failed to update categories");
+    } finally {
+      setUpdatingCategoryId(null);
+    }
+  };
+
   const StatCard = ({ title, value, icon: Icon, color }) => (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between">
@@ -419,15 +515,41 @@ function Dashboard() {
           className="max-w-full max-h-full object-contain"
         />
       </div>
-      <div className="p-4">
-        <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
+      <div className="p-4 pt-3 relative">
+        <div className="flex items-start">
+          <div className="min-w-0">
+            {product.categories && product.categories.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                <div className="flex justify-start flex-wrap gap-1 mt-1">
+                  {product.categories.slice(0, 2).map((c) => (
+                    <span
+                      key={c}
+                      className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded-xl border border-pink-300"
+                    >
+                      {c}
+                    </span>
+                  ))}
+                  {product.categories.length > 2 && (
+                    <span className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded-full">
+                      +{product.categories.length - 2}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <h3 className="font-semibold text-gray-900 truncate">
+              {product.name}
+            </h3>
+          </div>
+        </div>
         <p className="text-lg font-bold text-purple-600 mt-1">
           MAD {product.price}
         </p>
         <div className="flex gap-2 mt-3">
           <button
             onClick={() => startEdit(product)}
-            className="flex-1 bg-blue-50 text-blue-600 py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+            className="flex-1 bg-purple-50 text-purple-600 py-2 px-3 rounded-lg text-sm font-medium hover:bg-purple-100 transition-colors"
           >
             Edit
           </button>
@@ -496,91 +618,118 @@ function Dashboard() {
         <main className="flex-1 p-6 lg:ml-0">
           {/* Overview Tab */}
           {activeTab === "overview" && (
-            <div>
-              <div className="mb-8">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  Dashboard Overview
-                </h2>
-                <p className="text-gray-600">
-                  Welcome back! Here's what's happening with your store.
-                </p>
-              </div>
+            <>
+              <div>
+                <div className="mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                    Dashboard Overview
+                  </h2>
+                  <p className="text-gray-600">
+                    Welcome back! Here's what's happening with your store.
+                  </p>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <StatCard
-                  title="Total Products"
-                  value={products.length}
-                  icon={Package}
-                  color="bg-blue-500"
-                />
-                <StatCard
-                  title="Total Revenue"
-                  value={`MAD ${orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0).toFixed(2)}`}
-                  icon={DollarSign}
-                  color="bg-green-500"
-                />
-                <StatCard
-                  title="Total Orders"
-                  value={orders.length}
-                  icon={ShoppingCart}
-                  color="bg-purple-500"
-                />
-                <StatCard
-                  title="Total Reviews"
-                  value={reviews.length}
-                  icon={Star}
-                  color="bg-yellow-500"
-                />
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                  <StatCard
+                    title="Total Products"
+                    value={products.length}
+                    icon={Package}
+                    color="bg-blue-500"
+                  />
+                  <StatCard
+                    title="Total Revenue"
+                    value={`MAD ${orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0).toFixed(2)}`}
+                    icon={DollarSign}
+                    color="bg-green-500"
+                  />
+                  <StatCard
+                    title="Total Orders"
+                    value={orders.length}
+                    icon={ShoppingCart}
+                    color="bg-purple-500"
+                  />
+                  <StatCard
+                    title="Total Reviews"
+                    value={reviews.length}
+                    icon={Star}
+                    color="bg-yellow-500"
+                  />
+                </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Recent Products
-                  </h3>
-                  <div className="space-y-3">
-                    {products.slice(0, 5).map((product) => (
-                      <div key={product.id} className="flex items-center gap-3">
-                        <img
-                          src={getProductImageUrl(product.variants?.[0]?.image)}
-                          alt={product.name}
-                          className="w-10 h-10 rounded-lg object-cover"
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900 truncate">
-                            {product.name}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            MAD {product.price}
-                          </p>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Recent Products
+                    </h3>
+                    <div className="space-y-3">
+                      {products.slice(0, 5).map((product) => (
+                        <div
+                          key={product.id}
+                          className="flex items-center gap-3"
+                        >
+                          <img
+                            src={getProductImageUrl(
+                              product.variants?.[0]?.image,
+                            )}
+                            alt={product.name}
+                            className="w-10 h-10 rounded-lg object-cover"
+                          />
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900 truncate">
+                              {product.name}
+                            </p>
+                            {product.categories &&
+                              product.categories.length > 0 && (
+                                <div className="flex justify-start flex-wrap gap-1 mt-1">
+                                  {product.categories.slice(0, 2).map((c) => (
+                                    <span
+                                      key={c}
+                                      className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-xl border border-gray-300"
+                                    >
+                                      {c}
+                                    </span>
+                                  ))}
+                                  {product.categories.length > 2 && (
+                                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                                      +{product.categories.length - 2}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            <p className="text-sm text-gray-600 mt-1">
+                              MAD {product.price}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Quick Actions
-                  </h3>
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => {
-                        setActiveTab("products");
-                        setShowProductModal(true);
-                      }}
-                      className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
-                    >
-                      <Plus className="w-5 h-5" />
-                      Add New Product
-                    </button>
-                    <button className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                      View Analytics
-                    </button>
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Quick Actions
+                    </h3>
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => {
+                          setActiveTab("products");
+                          setShowProductModal(true);
+                        }}
+                        className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
+                      >
+                        <Plus className="w-5 h-5" />
+                        Add New Product
+                      </button>
+                      <button className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                        View Analytics
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+
+              {/* removed big categories section - categories are edited per-product via Options */}
+            </>
           )}
 
           {/* Products Tab */}
@@ -604,7 +753,7 @@ function Dashboard() {
 
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -656,20 +805,20 @@ function Dashboard() {
                           <span
                             className={`px-3 py-1 rounded-full text-sm font-medium ${
                               order.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
+                                ? "bg-purple-100 text-purple-800"
                                 : order.status === "processing"
-                                  ? "bg-blue-100 text-blue-800"
+                                  ? "bg-purple-200 text-purple-900"
                                   : order.status === "shipped"
-                                    ? "bg-purple-100 text-purple-800"
+                                    ? "bg-purple-300 text-purple-900"
                                     : order.status === "delivered"
-                                      ? "bg-green-100 text-green-800"
+                                      ? "bg-purple-400 text-white"
                                       : "bg-red-100 text-red-800"
                             }`}
                           >
                             {order.status.charAt(0).toUpperCase() +
                               order.status.slice(1)}
                           </span>
-                          <span className="text-lg font-bold text-amber-600">
+                          <span className="text-lg font-bold text-purple-600">
                             MAD {order.total}
                           </span>
                         </div>
@@ -718,7 +867,7 @@ function Dashboard() {
                                 {item.color} • {item.size} • Qty:{" "}
                                 {item.quantity}
                               </span>
-                              <span className="text-amber-600 font-medium">
+                              <span className="text-purple-600 font-medium">
                                 MAD {item.price}
                               </span>
                             </div>
@@ -734,7 +883,7 @@ function Dashboard() {
                                 onClick={() =>
                                   updateOrderStatus(order.id, "processing")
                                 }
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                                className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
                               >
                                 Start Processing
                               </button>
@@ -754,7 +903,7 @@ function Dashboard() {
                                 onClick={() =>
                                   updateOrderStatus(order.id, "delivered")
                                 }
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
                               >
                                 Mark as Delivered
                               </button>
@@ -826,7 +975,7 @@ function Dashboard() {
                                   key={i}
                                   className={`w-4 h-4 ${
                                     i < review.rating
-                                      ? "text-yellow-400 fill-current"
+                                      ? "text-purple-400 fill-current"
                                       : "text-gray-300"
                                   }`}
                                 />
@@ -840,7 +989,7 @@ function Dashboard() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => openEditReviewModal(review)}
-                            className="text-blue-500 hover:text-blue-700 p-2"
+                            className="text-purple-500 hover:text-purple-700 p-2"
                             title="Edit review"
                           >
                             <Edit className="w-5 h-5" />
@@ -859,6 +1008,18 @@ function Dashboard() {
                         <p className="text-sm font-medium text-gray-700 mb-2">
                           Product: {review.products?.name || "Unknown Product"}
                         </p>
+                        {review.products?.categories && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {review.products.categories.map((c) => (
+                              <span
+                                key={c}
+                                className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
+                              >
+                                {c}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         <p className="text-gray-700 italic">
                           "{review.review}"
                         </p>
@@ -878,7 +1039,7 @@ function Dashboard() {
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${
                             review.is_verified
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-purple-100 text-purple-800"
                               : "bg-gray-100 text-gray-800"
                           }`}
                         >
@@ -930,7 +1091,7 @@ function Dashboard() {
                       name: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   required
                 />
                 <input
@@ -944,7 +1105,7 @@ function Dashboard() {
                       price: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   required
                 />
               </div>
@@ -958,7 +1119,7 @@ function Dashboard() {
                     description: e.target.value,
                   }))
                 }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent h-24 resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent h-24 resize-none"
                 required
               />
 
@@ -996,7 +1157,7 @@ function Dashboard() {
                           onChange={(e) =>
                             updateVariant(index, "color", e.target.value)
                           }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         />
 
                         <div>
@@ -1037,11 +1198,47 @@ function Dashboard() {
                   <button
                     type="button"
                     onClick={addVariant}
-                    className="w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-amber-500 hover:text-amber-600 transition-colors"
+                    className="w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-purple-500 hover:text-purple-600 transition-colors"
                   >
                     + Add Variant
                   </button>
                 </div>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={openCategoryPicker}
+                  className="w-full py-3 px-4 border-2 border-purple-400 bg-purple-50 rounded-lg text-purple-700 font-semibold flex items-center justify-center gap-2 hover:bg-purple-100 hover:border-purple-600 hover:text-purple-900 transition-colors shadow-sm"
+                  title="Options"
+                >
+                  <Settings className="w-5 h-5 text-purple-500" />
+                  <span>Add Product Categories</span>
+                </button>
+                {showCategoryPicker && (
+                  <div className="mt-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold text-gray-900">Select Categories</span>
+                      <button type="button" onClick={closeCategoryPicker} className="text-gray-500 hover:text-gray-800">Close</button>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {CATEGORIES.map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => toggleCategory(cat)}
+                          className={`py-2 px-3 rounded-lg border text-sm font-medium text-left ${
+                            productForm.categories.includes(cat)
+                              ? "bg-purple-100 text-purple-800 border-purple-200"
+                              : "bg-white text-gray-700 border-gray-300 hover:border-purple-500"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Sizes */}
@@ -1058,7 +1255,7 @@ function Dashboard() {
                       className={`py-2 px-4 rounded-lg border font-medium transition-colors ${
                         productForm.sizes.includes(size)
                           ? "bg-purple-600 text-white border-purple-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:border-amber-500"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-purple-500"
                       }`}
                     >
                       {size}
@@ -1096,6 +1293,55 @@ function Dashboard() {
         </div>
       )}
 
+      {/* Inline category editor modal (centered) */}
+      {optionsOpenProductId && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl w-full max-w-lg p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Edit Categories</h3>
+              <button onClick={closeCategoryEditor} className="text-gray-500">
+                Close
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => toggleEditorCategory(cat)}
+                  className={`py-2 px-3 rounded-lg border text-sm font-medium text-left ${
+                    categoryEditorSelections.includes(cat)
+                      ? "bg-purple-100 text-purple-800 border-purple-200"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-purple-500"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={closeCategoryEditor}
+                className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => saveProductCategories(optionsOpenProductId)}
+                className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700"
+                disabled={updatingCategoryId === optionsOpenProductId}
+              >
+                {updatingCategoryId === optionsOpenProductId
+                  ? "Saving..."
+                  : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Review Modal */}
       {showReviewModal && editingReview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -1126,7 +1372,7 @@ function Dashboard() {
                       <Star
                         className={`w-6 h-6 ${
                           star <= reviewForm.rating
-                            ? "text-yellow-400 fill-current"
+                            ? "text-purple-400 fill-current"
                             : "text-gray-300"
                         }`}
                       />
@@ -1145,7 +1391,7 @@ function Dashboard() {
                     setReviewForm({ ...reviewForm, review: e.target.value })
                   }
                   placeholder="Update the review text..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent h-24 resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent h-24 resize-none"
                   required
                 />
               </div>

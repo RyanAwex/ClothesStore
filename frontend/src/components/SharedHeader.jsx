@@ -33,10 +33,13 @@ function SharedHeader({ onMenuClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [headerSearch, setHeaderSearch] = useState("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const menuButtonRef = useRef(null);
   const userMenuRef = useRef(null);
+  const mobileSearchRef = useRef(null);
+  const mobileInputRef = useRef(null);
 
   // Close on ESC
   useEffect(() => {
@@ -44,6 +47,7 @@ function SharedHeader({ onMenuClick }) {
       if (e.key === "Escape") {
         setMenuOpen(false);
         setUserMenuOpen(false);
+        setMobileSearchOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -71,6 +75,17 @@ function SharedHeader({ onMenuClick }) {
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
   }, [userMenuOpen]);
+
+  // Close mobile search popup on outside click
+  useEffect(() => {
+    if (!mobileSearchOpen) return;
+    const onClick = (e) => {
+      if (mobileSearchRef.current && !mobileSearchRef.current.contains(e.target))
+        setMobileSearchOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [mobileSearchOpen]);
 
   // Prevent background scroll when menu open; restore previous overflow on close/unmount
   // Also manage focus so we don't hide a focused element behind aria-hidden.
@@ -123,6 +138,7 @@ function SharedHeader({ onMenuClick }) {
     e && e.preventDefault();
     setMenuOpen(false);
     setUserMenuOpen(false);
+    setMobileSearchOpen(false);
     // For now navigate to products; query handling can be added later
     navigate("/products");
   };
@@ -219,6 +235,18 @@ function SharedHeader({ onMenuClick }) {
                     </button>
                   )}
                 </div>
+
+                {/* Mobile: show search icon when the full search is hidden */}
+                <button
+                  onClick={() => {
+                    setMobileSearchOpen(true);
+                    setTimeout(() => mobileInputRef.current && mobileInputRef.current.focus(), 50);
+                  }}
+                  className="md:hidden w-11 h-11 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all duration-200 hover:shadow-md"
+                  aria-label="Open search"
+                >
+                  <Search size={20} />
+                </button>
 
                 {/* Cart Button */}
                 {document.location.pathname !== "/cart" && (
@@ -346,6 +374,41 @@ function SharedHeader({ onMenuClick }) {
                 </button> */}
               </div>
             </>
+          )}
+
+          {/* Mobile search popup rendered under header */}
+          {mobileSearchOpen && (
+            <div className="absolute left-0 right-0 top-full z-50 flex justify-center mt-2">
+              <div ref={mobileSearchRef} className="w-full px-4 sm:px-6">
+                <form onSubmit={handleSearchSubmit}>
+                  <div className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 w-full max-w-2xl mx-auto shadow-lg flex items-center gap-3">
+                    <Search size={18} className="text-gray-400" />
+                    <input
+                      ref={mobileInputRef}
+                      type="search"
+                      placeholder="Search products..."
+                      value={headerSearch}
+                      onChange={(e) => setHeaderSearch(e.target.value)}
+                      className="bg-transparent outline-none text-sm w-full text-gray-700 placeholder-gray-400"
+                    />
+                    <button
+                      type="submit"
+                      className="text-sm text-amber-800 font-semibold hover:text-amber-600 transition"
+                    >
+                      Search
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMobileSearchOpen(false)}
+                      className="ml-2 text-gray-400 hover:text-gray-600 transition"
+                      aria-label="Close search"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           )}
 
           {isDashboard && (
