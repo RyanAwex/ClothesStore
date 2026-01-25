@@ -27,7 +27,6 @@ function Products({ title, margin, excludeId, limit } = {}) {
   // Filter States
   const location = useLocation();
   const isProductsPage = location.pathname === "/products";
-  // const isProductPage = location.pathname === "/product";
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -229,15 +228,6 @@ function Products({ title, margin, excludeId, limit } = {}) {
 
       <div className={`relative ${document.location.pathname === "/products" ? "mt-25" : ""} `}>
         <div className="text-center mb-8">
-          {/* {!isProductPage && (
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 px-4 py-2 rounded-full mb-6">
-            <Sparkles size={16} className="text-purple-600" />
-            <span className="text-sm font-semibold text-purple-800">
-              Premium Collection
-            </span>
-          </div>
-          )} */}
-
           <div
             className={`flex flex-row gap-4 mb-6 ${
               isProductsPage
@@ -355,14 +345,23 @@ function Products({ title, margin, excludeId, limit } = {}) {
            </div>
         ) : (
           <>
-            {/* --- MOBILE VIEW: SWIPERS (Fixed Loop Warning) --- */}
+            {/* --- MOBILE VIEW: SWIPERS (Smart Loop) --- */}
             <div className="block md:hidden space-y-8">
               {mobileChunks.map((chunk, chunkIndex) => {
                 
-                // WARNING FIX: Swiper 'loop' mode needs a minimum number of slides (usually ~2x slidesPerView).
-                let loopSlides = [...chunk];
-                while (loopSlides.length < 12) {
-                    loopSlides = [...loopSlides, ...chunk];
+                // LOGIC UPDATE: 
+                // If chunk has less than 3 items, do not loop and do not duplicate.
+                // If chunk has 3 or more items, enable loop and duplicate to satisfy Swiper requirements.
+                
+                const isSmallChunk = chunk.length < 3;
+                const shouldLoop = !isSmallChunk;
+                
+                let displaySlides = [...chunk];
+
+                if (shouldLoop) {
+                    while (displaySlides.length < 12) {
+                        displaySlides = [...displaySlides, ...chunk];
+                    }
                 }
 
                 return (
@@ -371,7 +370,7 @@ function Products({ title, margin, excludeId, limit } = {}) {
                       effect={"coverflow"}
                       grabCursor={true}
                       centeredSlides={true}
-                      loop={true} // Now safe to use loop
+                      loop={shouldLoop} // Conditional Loop
                       slidesPerView={"auto"}
                       spaceBetween={5}
                       coverflowEffect={{
@@ -385,8 +384,7 @@ function Products({ title, margin, excludeId, limit } = {}) {
                       modules={[EffectCoverflow, Autoplay]}
                       className="w-full py-4 pb-8"
                     >
-                      {loopSlides.map((product, index) => {
-                        // Create unique key for duplicated items to keep React happy
+                      {displaySlides.map((product, index) => {
                         const uniqueKey = `mobile-swipe-${chunkIndex}-${product._id || product.id}-${index}`;
                         return (
                           <SwiperSlide
