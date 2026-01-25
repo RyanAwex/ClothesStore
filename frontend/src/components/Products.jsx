@@ -27,7 +27,7 @@ function Products({ title, margin, excludeId, limit } = {}) {
   // Filter States
   const location = useLocation();
   const isProductsPage = location.pathname === "/products";
-  const isProductPage = location.pathname === "/product";
+  // const isProductPage = location.pathname === "/product";
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -229,14 +229,14 @@ function Products({ title, margin, excludeId, limit } = {}) {
 
       <div className={`relative ${document.location.pathname === "/products" ? "mt-25" : ""} `}>
         <div className="text-center mb-8">
-          {!isProductPage && (
+          {/* {!isProductPage && (
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 px-4 py-2 rounded-full mb-6">
             <Sparkles size={16} className="text-purple-600" />
             <span className="text-sm font-semibold text-purple-800">
               Premium Collection
             </span>
           </div>
-          )}
+          )} */}
 
           <div
             className={`flex flex-row gap-4 mb-6 ${

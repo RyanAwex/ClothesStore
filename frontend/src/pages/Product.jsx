@@ -212,7 +212,7 @@ function Product() {
         </div>
 
         <section className="mt-12">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-xl pt-4 md:px-6 shadow-sm border border-gray-100">
             <Products title="Other Products" excludeId={id} />
           </div>
         </section>
