@@ -198,13 +198,10 @@ function SharedHeader({ onMenuClick }) {
                 className="flex items-baseline gap-2 text-gray-900 font-black text-xl sm:text-2xl hover:scale-105 transition-transform duration-200"
                 aria-label="Home"
               >
-                {/* <div className="w-8 h-8 bg-linear-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">L</span>
-                </div> */}
                 <div>
-                  <div className="text-gray-900">Lux</div>
+                  <div className="text-gray-900">Luxe</div>
                   <div className="text-xs font-semibold text-gray-500 -mt-1">
-                    By Stylish
+                    Ecommerce
                   </div>
                 </div>
               </button>
@@ -362,16 +359,6 @@ function SharedHeader({ onMenuClick }) {
                     Sign In
                   </button>
                 )}
-
-                {/* <button
-                  ref={menuButtonRef}
-                  onClick={() => setMenuOpen((s) => !s)}
-                  className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all duration-200 hover:shadow-md lg:hidden"
-                  aria-label="Menu"
-                  aria-expanded={menuOpen}
-                >
-                  {menuOpen ? <X size={20} /> : <Menu size={20} />}
-                </button> */}
               </div>
             </>
           )}
@@ -424,134 +411,6 @@ function SharedHeader({ onMenuClick }) {
           )}
         </div>
       </header>
-
-      {/* Enhanced Drawer */}
-      {/* <aside
-        ref={menuRef}
-        className={`fixed top-0 right-0 h-full z-50 w-4/5 max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-in-out border-l border-gray-100 ${
-          menuOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <nav className="h-full flex flex-col">
-          <div className="h-16 sm:h-18 flex items-center justify-between px-6 mb-6 border-b border-gray-100">
-            <div className="flex items-end gap-2">
-              <div className="w-8 h-8 bg-linear-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">L</span>
-              </div>
-              <div>
-                <div className="text-lg font-black text-gray-900">Lux</div>
-                <div className="text-xs font-semibold text-gray-500 -mt-1">
-                  By Stylish
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => setMenuOpen(false)}
-              aria-label="Close menu"
-              className="p-2 rounded-xl hover:bg-gray-100 transition"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <form onSubmit={handleSearchSubmit} className="px-6 mb-6">
-            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
-              <Search size={18} className="text-gray-500" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
-                className="bg-transparent outline-none text-sm w-full text-gray-700"
-              />
-              <button
-                type="submit"
-                className="text-sm text-amber-800 font-semibold hover:text-amber-600 transition"
-              >
-                Search
-              </button>
-            </div>
-          </form>
-
-          <ul className="flex-1 flex flex-col gap-1 px-6">
-            <li>
-              <button
-                onClick={() => handleNavigate("/")}
-                className="w-full text-left px-4 py-4 rounded-2xl hover:bg-gray-50 transition flex items-center gap-4 font-medium"
-              >
-                🏠 Home
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => handleNavigate("/products")}
-                className="w-full text-left px-4 py-4 rounded-2xl hover:bg-gray-50 transition flex items-center gap-4 font-medium"
-              >
-                🛍️ All Products
-              </button>
-            </li>
-            {document.location.pathname !== "/cart" && (
-              <li>
-                <button
-                  onClick={() => handleNavigate("/cart")}
-                  className="w-full text-left px-4 py-4 rounded-2xl hover:bg-gray-50 transition flex items-center gap-4 font-medium"
-                >
-                  🛒 Cart
-                  {cartItemCount > 0 && (
-                    <span className="text-xs w-6 h-6 bg-linear-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center font-bold">
-                      {cartItemCount}
-                    </span>
-                  )}
-                </button>
-              </li>
-            )}
-            {document.location.pathname !== "/checkout" && (
-              <li>
-                <button
-                  onClick={() => handleNavigate("/checkout")}
-                  className="w-full text-left px-4 py-4 rounded-2xl hover:bg-gray-50 transition flex items-center gap-4 font-medium"
-                >
-                  💳 Checkout
-                </button>
-              </li>
-            )}
-            {isAuthenticated && (
-              <li>
-                <button
-                  onClick={() => handleNavigate("/profile")}
-                  className="w-full text-left px-4 py-4 rounded-2xl hover:bg-gray-50 transition flex items-center gap-4 font-medium"
-                >
-                  👤 My Profile
-                </button>
-              </li>
-            )}
-          </ul>
-
-          <div className="mt-auto px-6 pb-6">
-            {isAuthenticated ? (
-              <>
-                {isAdmin && (
-                  <button
-                    onClick={handleDashboard}
-                    className="w-full mb-3 px-6 py-4 bg-linear-to-r from-purple-500 to-pink-500 text-white rounded-2xl font-bold hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-lg hover:shadow-xl"
-                  >
-                    👑 Admin Dashboard
-                  </button>
-                )}
-              </>
-            ) : (
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  navigate("/auth");
-                }}
-                className="w-full mb-3 px-6 py-4 bg-linear-to-r from-purple-500 to-pink-500 text-white rounded-2xl font-bold hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                🚀 Sign In
-              </button>
-            )}
-          </div>
-        </nav>
-      </aside> */}
     </>
   );
 }
