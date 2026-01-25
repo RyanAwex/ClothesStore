@@ -188,7 +188,7 @@ function SharedHeader({ onMenuClick }) {
               <button
                 onClick={() => navigate(-1)}
                 aria-label="Back"
-                className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all duration-200 hover:shadow-md"
+                className="w-11 h-11 cursor-pointer rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all duration-200 hover:shadow-md"
               >
                 <ArrowLeft size={20} />
               </button>
@@ -250,7 +250,7 @@ function SharedHeader({ onMenuClick }) {
                   <div className="relative">
                     <button
                       onClick={() => navigate("/cart")}
-                      className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all duration-200 hover:shadow-md relative"
+                      className="w-11 h-11 cursor-pointer rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all duration-200 hover:shadow-md relative"
                       aria-label="Cart"
                     >
                       <ShoppingCart size={20} />
@@ -268,7 +268,7 @@ function SharedHeader({ onMenuClick }) {
                   <div className="relative" ref={userMenuRef}>
                     <button
                       onClick={() => setUserMenuOpen(!userMenuOpen)}
-                      className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all duration-200 hover:shadow-md"
+                      className="w-11 h-11 cursor-pointer rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all duration-200 hover:shadow-md"
                       aria-label="User menu"
                     >
                       <div className="w-8 h-8 bg-linear-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
@@ -354,7 +354,7 @@ function SharedHeader({ onMenuClick }) {
                 ) : (
                   <button
                     onClick={() => navigate("/auth")}
-                    className="bg-linear-to-r from-purple-500 to-pink-500 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-200 hover:shadow-lg transform hover:scale-105"
+                    className="cursor-pointer bg-linear-to-r from-purple-500 to-pink-500 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-200 hover:shadow-lg transform hover:scale-105"
                   >
                     Sign In
                   </button>

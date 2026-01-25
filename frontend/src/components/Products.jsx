@@ -27,6 +27,7 @@ function Products({ title, margin, excludeId, limit } = {}) {
   // Filter States
   const location = useLocation();
   const isProductsPage = location.pathname === "/products";
+  const isProductPage = location.pathname === "/product";
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -219,21 +220,23 @@ function Products({ title, margin, excludeId, limit } = {}) {
   );
 
   return (
-    <section className={`relative mt-16 mb-6 lg:mb-16 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${margin}`}>
+    <section className={`relative mb-6 lg:mb-16 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${margin}`}>
       {/* Background pattern */}
       <div className="absolute inset-0 -z-10 opacity-20">
         <div className="absolute top-10 left-10 w-40 h-40 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full blur-3xl"></div>
         <div className="absolute bottom-10 right-10 w-32 h-32 bg-gradient-to-br from-pink-200 to-purple-200 rounded-full blur-2xl"></div>
       </div>
 
-      <div className="relative mt-25">
+      <div className={`relative ${document.location.pathname === "/products" ? "mt-25" : ""} `}>
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 px-4 py-2 rounded-full mb-6">
+          {!isProductPage && (
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 px-4 py-2 rounded-full mb-6">
             <Sparkles size={16} className="text-purple-600" />
             <span className="text-sm font-semibold text-purple-800">
               Premium Collection
             </span>
           </div>
+          )}
 
           <div
             className={`flex flex-row gap-4 mb-6 ${
@@ -388,7 +391,7 @@ function Products({ title, margin, excludeId, limit } = {}) {
                         return (
                           <SwiperSlide
                             key={uniqueKey}
-                            className="!w-[80%] sm:!w-[350px]"
+                            className="!w-[80%] sm:!w-[350px] py-5 md:py-2"
                           >
                             {renderProductCard(product, index, true, uniqueKey)}
                           </SwiperSlide>

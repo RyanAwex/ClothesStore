@@ -106,8 +106,8 @@ function Product() {
     <div className="min-h-screen bg-white">
       <SharedHeader />
 
-      <main className="max-w-5xl mx-auto px-4 pt-20 pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+      <main className=" px-4 pt-25 pb-12">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           {/* Image / Slider */}
           <div className="w-full flex items-center justify-center">
             <div className="relative w-full max-w-md">
@@ -213,9 +213,6 @@ function Product() {
 
         <section className="mt-12">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
-              You may also like
-            </h3>
             <Products title="Other Products" excludeId={id} />
           </div>
         </section>
