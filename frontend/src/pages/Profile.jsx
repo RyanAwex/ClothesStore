@@ -12,7 +12,7 @@ import {
   LogOut,
   Trash2,
 } from "lucide-react";
-import SharedHeader from "../components/SharedHeader";
+import SharedHeader from "../components/shared/SharedHeader";
 import { useAuthStore } from "../stores/authStore";
 import supabase from "../utils/supabase";
 

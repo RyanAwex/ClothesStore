@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
-import Products from "./components/Products";
+import Products from "./components/shared/Products";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 import Product from "./pages/Product";
-import SharedHeader from "./components/SharedHeader";
+import SharedHeader from "./components/shared/SharedHeader";
 import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";

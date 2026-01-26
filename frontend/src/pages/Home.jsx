@@ -1,11 +1,11 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import Hero from "../components/Hero";
-import Products from "../components/Products";
-import Testimonials from "../components/Testimonials";
-import SharedHeader from "../components/SharedHeader";
-import Footer from "../components/Footer";
+import Hero from "../components/index/Hero";
+import Products from "../components/shared/Products";
+import Testimonials from "../components/index/Testimonials";
+import SharedHeader from "../components/shared/SharedHeader";
+import Footer from "../components/index/Footer";
 
 function Home() {
   return (

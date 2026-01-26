@@ -14,7 +14,7 @@ import {
   ShoppingBag,
   AlertCircle,
 } from "lucide-react";
-import SharedHeader from "../components/SharedHeader";
+import SharedHeader from "../components/shared/SharedHeader";
 import { useCart } from "../hooks/useCart";
 import { useAuthStore } from "../stores/authStore";
 import supabase, { getProductImageUrl } from "../utils/supabase";

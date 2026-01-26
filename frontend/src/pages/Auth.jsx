@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuthStore } from "../stores/authStore";
 import { Link, useNavigate } from "react-router-dom";
-import SharedHeader from "../components/SharedHeader";
+import SharedHeader from "../components/shared/SharedHeader";
 
 function Login() {
   const navigate = useNavigate();

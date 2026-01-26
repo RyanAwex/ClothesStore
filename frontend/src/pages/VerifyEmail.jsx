@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuthStore } from "../stores/authStore";
 import { useNavigate } from "react-router-dom";
-import SharedHeader from "../components/SharedHeader";
+import SharedHeader from "../components/shared/SharedHeader";
 
 function VerifyEmail() {
   const navigate = useNavigate();

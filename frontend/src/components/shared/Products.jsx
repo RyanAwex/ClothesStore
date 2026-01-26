@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ShoppingBag, Heart, Eye, Sparkles, SlidersHorizontal, X, Filter } from "lucide-react";
-import supabase, { getProductImageUrl } from "../utils/supabase";
+import supabase, { getProductImageUrl } from "../../utils/supabase";
 
 // Swiper Imports
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -10,7 +10,7 @@ import "swiper/css";
 import "swiper/css/effect-coverflow";
 
 // Master Category List
-import { CATEGORIES } from "../utils/categories";
+import { CATEGORIES } from "../../utils/categories";
 
 function Products({ title, margin, excludeId, limit } = {}) {
   const [products, setProducts] = useState([]);
@@ -60,6 +60,7 @@ function Products({ title, margin, excludeId, limit } = {}) {
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit]);
 
   // 1. Calculate Available Categories

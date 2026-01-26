@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Star, Quote, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
-import supabase from "../utils/supabase";
+import supabase from "../../utils/supabase";
 
 function Testimonials() {
   const [reviews, setReviews] = useState([]);

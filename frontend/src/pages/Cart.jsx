@@ -11,7 +11,7 @@ import {
   Truck,
   RefreshCw,
 } from "lucide-react";
-import SharedHeader from "../components/SharedHeader";
+import SharedHeader from "../components/shared/SharedHeader";
 import { useCart } from "../hooks/useCart";
 import { getProductImageUrl } from "../utils/supabase";
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ShoppingCart, X } from "lucide-react";
-import Products from "../components/Products";
-import SharedHeader from "../components/SharedHeader";
+import Products from "../components/shared/Products";
+import SharedHeader from "../components/shared/SharedHeader";
 import { useCart } from "../hooks/useCart";
 import supabase, { getProductImageUrl } from "../utils/supabase";
 
