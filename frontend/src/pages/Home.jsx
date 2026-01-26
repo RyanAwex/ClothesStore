@@ -12,7 +12,7 @@ function Home() {
     <div className="min-h-screen bg-white">
       <SharedHeader />
       <Hero />
-      <Products title="Our Latest Products" limit={6} />
+      <Products title="Our Latest Products" limit={8} />
       <div className="flex justify-center lg:mt-6">
         <Link
           to="/products"

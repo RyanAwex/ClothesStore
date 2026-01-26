@@ -14,32 +14,15 @@ import {
   Plus,
   Edit,
   Trash2,
-  Menu,
   X,
-  Upload,
-  Eye,
-  TrendingUp,
-  Users,
   DollarSign,
-  CheckCircle,
-  Clock,
-  Truck,
-  XCircle,
   Settings,
 } from "lucide-react";
+import { CATEGORIES } from "../utils/categories";
 
 function Dashboard() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = useAuthStore((s) => s.isAdmin);
-
-  // Debug logging
-  // useEffect(() => {
-  //   console.log("Dashboard Debug:");
-  //   console.log("- User:", user);
-  //   console.log("- User metadata:", user?.app_metadata);
-  //   console.log("- User role:", user?.app_metadata?.role);
-  //   console.log("- Is Admin:", isAdmin);
-  // }, [user, isAdmin]);
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [products, setProducts] = useState([]);
@@ -67,33 +50,8 @@ function Dashboard() {
     variants: [{ color: "", imageFile: null, imagePreview: null }],
     sizes: [],
     categories: [],
+    isFeatured: false,
   });
-
-  // Available categories
-  const CATEGORIES = [
-    "Djellabas",
-    "Caftans",
-    "Takchitas",
-    "Gandouras",
-    "Abayas",
-    "Kimonos & Cardigans",
-    "Belghas (Slippers)",
-    "T-shirts & Tops",
-    "Dresses",
-    "Shirts & Blouses",
-    "Trousers & Jeans",
-    "Skirts",
-    "Jackets & Coats",
-    "Sportswear",
-    "Modest Wear",
-    "Handbags & Clutches",
-    "Heels",
-    "Sneakers",
-    "Jewelry",
-    "Watches",
-    "Hijabs & Scarves",
-    "Belts",
-  ];
 
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
@@ -158,12 +116,6 @@ function Dashboard() {
 
   const fetchOrders = async () => {
     try {
-      // console.log(
-      //   "Fetching orders... User:",
-      //   user,
-      //   "Is Admin:",
-      //   user?.app_metadata?.role === "admin",
-      // );
       const { data, error } = await supabase
         .from("orders")
         .select("*")
@@ -233,6 +185,7 @@ function Dashboard() {
         variants: variantsWithImages,
         sizes: productForm.sizes,
         categories: productForm.categories,
+        is_featured: productForm.isFeatured,
       };
 
       if (editingProduct) {
@@ -265,6 +218,7 @@ function Dashboard() {
       variants: [{ color: "", imageFile: null, imagePreview: null }],
       sizes: [],
       categories: [],
+      isFeatured: false,
     });
   };
 
@@ -281,6 +235,7 @@ function Dashboard() {
       })),
       sizes: product.sizes || [],
       categories: product.categories || [],
+      isFeatured: product.is_featured || false,
     });
     setShowProductModal(true);
   };
@@ -510,7 +465,7 @@ function Dashboard() {
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
       <div
         className="bg-gray-50 flex items-center justify-center p-4"
-        style={{ aspectRatio: "4 / 3" }}
+        style={{ aspectRatio: "1 / 1" }}
       >
         <img
           src={getProductImageUrl(product.variants?.[0]?.image)}
@@ -1242,6 +1197,23 @@ function Dashboard() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Featured Toggle */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setProductForm(prev => ({ ...prev, isFeatured: !prev.isFeatured }))}
+                  className={`w-full py-3 px-4 border-2 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm ${
+                    productForm.isFeatured
+                      ? "border-yellow-400 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 hover:border-yellow-600 hover:text-yellow-900"
+                      : "border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
+                  }`}
+                  title="Toggle Featured Product"
+                >
+                  <Star className={`w-5 h-5 ${productForm.isFeatured ? "fill-current text-yellow-500" : "text-gray-500"}`} />
+                  <span>{productForm.isFeatured ? "Featured Product" : "Mark as Featured"}</span>
+                </button>
               </div>
 
               {/* Sizes */}

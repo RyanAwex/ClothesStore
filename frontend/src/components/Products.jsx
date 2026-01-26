@@ -10,13 +10,7 @@ import "swiper/css";
 import "swiper/css/effect-coverflow";
 
 // Master Category List
-const CATEGORIES = [
-  "Djellabas", "Caftans", "Takchitas", "Gandouras", "Abayas",
-  "Kimonos & Cardigans", "Belghas (Slippers)", "T-shirts & Tops",
-  "Dresses", "Shirts & Blouses", "Trousers & Jeans", "Skirts",
-  "Jackets & Coats", "Sportswear", "Modest Wear", "Handbags & Clutches",
-  "Heels", "Sneakers", "Jewelry", "Watches", "Hijabs & Scarves", "Belts",
-];
+import { CATEGORIES } from "../utils/categories";
 
 function Products({ title, margin, excludeId, limit } = {}) {
   const [products, setProducts] = useState([]);
@@ -35,10 +29,17 @@ function Products({ title, margin, excludeId, limit } = {}) {
 
     const fetchProducts = async () => {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from("products")
           .select("*")
           .order("created_at", { ascending: false });
+
+        // If on index page, only show featured products
+        if (location.pathname === "/") {
+          query = query.eq("is_featured", true);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -132,7 +133,7 @@ function Products({ title, margin, excludeId, limit } = {}) {
       {/* Image Container */}
       <div
         className="relative overflow-hidden bg-gradient-to-br from-gray-50 to-white"
-        style={{ aspectRatio: "4 / 3" }}
+        style={{ aspectRatio: "1 / 1" }}
       >
         <img
           src={getProductImageUrl(product.variants?.[0]?.image)}

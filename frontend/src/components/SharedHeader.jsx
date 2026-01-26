@@ -181,7 +181,7 @@ function SharedHeader({ onMenuClick }) {
   return (
     <>
       <style>{`input[type="search"]::-webkit-search-cancel-button { display: none; }`}</style>
-      <header className="fixed top-0 left-0 w-full z-30 bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-100">
+      <header className="fixed top-0 left-0 w-full z-100 bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-18 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {!isHome ? (
