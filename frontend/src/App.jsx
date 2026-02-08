@@ -13,6 +13,7 @@ import { useAuthStore } from "./stores/authStore";
 import ForgotPassword from "./pages/ForgotPassword";
 import Profile from "./pages/Profile";
 import supabase from "./utils/supabase";
+import Test from "./pages/Test";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -129,6 +130,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<SecuredDashboard />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/test" element={<Test />} />
       </Routes>
     </div>
   );
